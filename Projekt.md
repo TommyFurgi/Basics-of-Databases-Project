@@ -53,80 +53,55 @@
 
 **Tabele:**
 1. Enrollment:
-Tabela przechowuje podstawowe dane o wszystkich zapisach. Zawiera informacje o osobie (StudentID) dokonującej zapisu na wydarzenie (EventID), datę wydarzenia oraz datę zapisu (event_date, enroll_date), całkowity koszt, warotść depozytu oraz już opłaconą kwotę (TotalCost, Deposit, Paid).
+Tabela przechowuje podstawowe dane o wszystkich zapisach. Zawiera informacje o osobie (StudentID) dokonującej zapisu na wydarzenie (OfferID), datę wydarzenia oraz datę zapisu (event_date, enroll_date).
 
 ```sql
 CREATE TABLE [dbo].[Enrollment](
-    [StudentID] [int] NOT NULL,
-    [EventID] [int] NOT NULL,
-    [event_date] [datetime] NULL,
-    [enroll_date] [datetime] NOT NULL,
-    [TotalCost] [money] NOT NULL,
-    [Deposit] [money] NOT NULL,
-    [Paid] [money] NOT NULL
+	[EnrollmentID] [int] NOT NULL,
+	[StudentID] [int] NOT NULL,
+	[OfferID] [int] NOT NULL,
+	[Event_date] [datetime] NOT NULL,
+	[Enroll_date] [datetime] NOT NULL,
+ CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
+(
+	[EnrollmentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
+ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Cart_details] FOREIGN KEY([OfferID])
+REFERENCES [dbo].[Order_details] ([OrderDetailsID])
 
-ALTER TABLE [dbo].[Enrollment] WITH CHECK ADD CONSTRAINT [FK_Enrollment_Offers] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Offers] ([EventID])
+ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Cart_details]
+
+ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Offers] FOREIGN KEY([OfferID])
+REFERENCES [dbo].[Offers] ([OfferID])
 
 ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Offers]
 
-ALTER TABLE [dbo].[Enrollment] WITH CHECK ADD CONSTRAINT [FK_Enrollment_Students] FOREIGN KEY([StudentID])
+ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Students] FOREIGN KEY([StudentID])
 REFERENCES [dbo].[Students] ([StudentID])
 
 ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Students]
 ```
 
 2. Offers:
-Tabela zawiera informacje o wszystkich wydarzeniach jakie są oferowane. Zawiera idetyfikator wydarzenia (EventID), nazwe, opis oraz typ (Name, Description, Type), typ określa czy jest to webinar, kurs, studia czy pojedyńcza lekcja. Dodatkowo miejsce wydarzenia oraz jego całkowity koszt (Place, Price).
+Tabela zawiera informacje o wszystkich wydarzeniach jakie są oferowane. Zawiera idetyfikator wydarzenia (OfferID), nazwe, opis oraz typ (Name, Description, Type), typ określa czy jest to webinar, kurs, studia czy pojedyńcza lekcja. Dodatkowo miejsce wydarzenia oraz jego całkowity koszt (Place, Price).
 
 <br>
 
 ```sql
 CREATE TABLE [dbo].[Offers](
-	[EventID] [int] NOT NULL,
-	[Name] [nchar](10) NOT NULL,
-	[Type] [nchar](10) NOT NULL,
-	[Description] [nchar](20) NULL,
+	[OfferID] [int] NOT NULL,
+	[Name] [nchar](50) NOT NULL,
+	[Type] [nchar](15) NOT NULL,
+	[Description] [nchar](50) NULL,
 	[Place] [nchar](20) NOT NULL,
 	[Price] [money] NOT NULL,
  CONSTRAINT [PK_Offers] PRIMARY KEY CLUSTERED 
 (
-	[EventID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON,
-ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+	[OfferID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Courses] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Courses] ([CourseID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Courses]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Gatherings] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Gatherings] ([GatheringID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Gatherings]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Lessons] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Lessons] ([LessonID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Lessons]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Studies] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Studies] ([StudiesID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Studies]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Types] FOREIGN KEY([Name])
-REFERENCES [dbo].[Types] ([TypeID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Types]
-
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [FK_Offers_Webinar] FOREIGN KEY([EventID])
-REFERENCES [dbo].[Webinar] ([WebinarID])
-
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [FK_Offers_Webinar]
 ```
 
 
@@ -515,75 +490,64 @@ ALTER TABLE [dbo].[CourseAttendance] CHECK CONSTRAINT [FK_Attendance_Students]
 ```
 
 17. Orders:
-Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia oraz ilość zamówionych produktów (StudentID, OrderDate, ProductsNo), posiada informacje o całkowitym koszcie zamówienia, zniżce i o tym czy zostało opłacone (TotalValue, Discount, PaymentMade). 
-
+Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia. 
 ```sql
 CREATE TABLE [dbo].[Orders](
 	[OrderID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[OrderDate] [nchar](10) NOT NULL,
-	[ProductsNo] [int] NOT NULL,
-	[TotalValue] [money] NOT NULL,
-	[Discount] [float] NOT NULL,
-	[PaymentMade] [bit] NOT NULL,
  CONSTRAINT [PK_Cart] PRIMARY KEY CLUSTERED 
 (
 	[OrderID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
-ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Cart_Students] FOREIGN KEY([StudentID])
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_Students] FOREIGN KEY([StudentID])
 REFERENCES [dbo].[Students] ([StudentID])
 
-ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Cart_Students]
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Students]
 ```
 
 18. Order_Details:
-Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do produktu który się w nim znajduje (OrderID, EventID), opisuje typ płatności i wartość produktu (Type, Value), datę ewentualnego odroczenia płatności oraz to czy płatność została odroczona (PostpontmentDate, PaymentPostpontment). 
+Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Type, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
 
 ```sql
 CREATE TABLE [dbo].[Order_details](
 	[OrderDetailsID] [int] NOT NULL,
-	[CartID] [int] NOT NULL,
-	[OfferID] [int] NOT NULL,
-	[Type] [nchar](50) NOT NULL,
+	[OrderID] [int] NOT NULL,
+	[EnrollmentID] [int] NOT NULL,
 	[Value] [money] NOT NULL,
-	[PostpontmentDate] [datetime] NULL,
-	[PaymentPostponement] [bit] NULL,
+	[Discount] [float] NOT NULL,
  CONSTRAINT [PK_Cart_details] PRIMARY KEY CLUSTERED 
 (
 	[OrderDetailsID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+ALTER TABLE [dbo].[Order_details] WITH CHECK ADD CONSTRAINT [CK_Order_details_Discount] CHECK ([Discount] >= 0 AND [Discount] < 1);
 
-ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Cart_details_Cart] FOREIGN KEY([CartID])
+ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Cart_details_Cart] FOREIGN KEY([OrderID])
 REFERENCES [dbo].[Orders] ([OrderID])
 
 ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Cart_details_Cart]
-
-ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Cart_details_Offers] FOREIGN KEY([OfferID])
-REFERENCES [dbo].[Offers] ([OfferID])
-
-ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Cart_details_Offers]
 ```
 
 19. Payments:
-Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem i studentem (OrderID, StudentID), określa datę, wartość oraz status płatności (Date, Value, Status).
+Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem(OrderID), zawiera datę, wartość oraz status płatności (Date, Value, Status), status jest typu bit.
 
 ```sql
 CREATE TABLE [dbo].[Payments](
 	[PaymentID] [int] NOT NULL,
-	[CartID] [int] NOT NULL,
+	[OrderID] [int] NOT NULL,
 	[Date] [datetime] NOT NULL,
 	[Value] [money] NOT NULL,
-	[Status] [bit] NOT NULL,
+	[IsCancelled] [bit] NOT NULL,
  CONSTRAINT [PK_Payments] PRIMARY KEY CLUSTERED 
 (
 	[PaymentID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
-ALTER TABLE [dbo].[Payments]  WITH CHECK ADD  CONSTRAINT [FK_Payments_Cart] FOREIGN KEY([CartID])
+ALTER TABLE [dbo].[Payments]  WITH CHECK ADD  CONSTRAINT [FK_Payments_Cart] FOREIGN KEY([OrderID])
 REFERENCES [dbo].[Orders] ([OrderID])
 
 ALTER TABLE [dbo].[Payments] CHECK CONSTRAINT [FK_Payments_Cart]
