@@ -50,7 +50,7 @@
 
 **Diagram bazy danych:**
 <p align="center">
-  <img src="diagrambazy.png" alt="Schemat">
+  <img src="views/Diagram_v3.png" alt="Schemat">
 </p>
 
 
