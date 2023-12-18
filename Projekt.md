@@ -49,7 +49,10 @@
 - Powiadomienie o zapłacie, użytkownik do dostaje przypomnienie o konieczności zapłaty tydzień przed ostatecznym terminem dokonania płatności, dotyczy to także zaliczek.
 
 **Diagram bazy danych:**
-![Przykładowy obraz](diagrambazy.png)
+<p align="center">
+  <img src="diagrambazy.png" alt="Schemat">
+</p>
+
 
 **Tabele:**
 1. Enrollment:
@@ -67,11 +70,6 @@ CREATE TABLE [dbo].[Enrollment](
 	[EnrollmentID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-
-ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Cart_details] FOREIGN KEY([OfferID])
-REFERENCES [dbo].[Order_details] ([OrderDetailsID])
-
-ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Cart_details]
 
 ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Offers] FOREIGN KEY([OfferID])
 REFERENCES [dbo].[Offers] ([OfferID])
@@ -107,7 +105,7 @@ CREATE TABLE [dbo].[Offers](
 
 
 3. Webinar:
-Tabela zawiera informacje o webianrach, zawiera klucz główny (WebinarID), nazwę oraz datę rozpoczęcia (WebinarName, Date), inforamcje o osbie, która to prowadzi (TeacTeacherIDhe) i link do webinaru (MeetingLink).
+Tabela zawiera informacje o webianrach, zawiera klucz główny (WebinarID), nazwę oraz datę rozpoczęcia (WebinarName, Date), inforamcje o osbie, która to prowadzi (TeacherID) i link do webinaru (MeetingLink).
 
 ```sql
 CREATE TABLE [dbo].[Webinar](
@@ -119,8 +117,7 @@ CREATE TABLE [dbo].[Webinar](
  CONSTRAINT [PK_Webinar] PRIMARY KEY CLUSTERED 
 (
 	[WebinarID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON
-ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
 ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [FK_Webinar_Offers] FOREIGN KEY([WebinarID])
@@ -135,7 +132,7 @@ ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [FK_Webinar_TeachingStaff]
 ```
 
 4. Studies:
-Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (FieldOfStudy, Fee), koorynatorze, maksymalnej ilości studentów i ilości semestrów na danym kierunku (Coordinator, StudentCapacity, SemestrNo).
+Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów i ilości semestrów na danym kierunku (TeacherID, StudentCapacity, SemestrNo).
 
 ```sql
 CREATE TABLE [dbo].[Studies](
@@ -219,13 +216,12 @@ ALTER TABLE [dbo].[Gatherings] CHECK CONSTRAINT [FK_Gatherings_Semesters]
 ```
 
 7. Semesters:
-W tabeli znajdują się informacje o wszystkich semestrach na wszystkich kierunkach studiów, klucz główny to (SemesterID), zawiera też informacje o kierunku studiów na którym semestr się znajduje, numerze semestru oraz ilości przedmitów na nim (StudiesID, Semestr_no, SubjectsNo).
+W tabeli znajdują się informacje o wszystkich semestrach na wszystkich kierunkach studiów, klucz główny to (SemesterID), zawiera też informacje o kierunku studiów na którym semestr się znajduje, numerze semestru(StudiesID, Semester_no).
 
 ```sql
 CREATE TABLE [dbo].[Semesters](
 	[SemesterID] [int] NOT NULL,
 	[StudiesID] [int] NOT NULL,
-	[SubjectsNo] [int] NOT NULL,
 	[Semester_no] [int] NOT NULL,
  CONSTRAINT [PK_Semesters] PRIMARY KEY CLUSTERED 
 (
@@ -237,6 +233,7 @@ ALTER TABLE [dbo].[Semesters]  WITH CHECK ADD  CONSTRAINT [FK_Semesters_Studies]
 REFERENCES [dbo].[Studies] ([StudiesID])
 
 ALTER TABLE [dbo].[Semesters] CHECK CONSTRAINT [FK_Semesters_Studies]
+
 ```
 
 8. Practices:
@@ -321,7 +318,7 @@ ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [FK_Subjects_Semesters]
 ```
 
 11. Lessons:
-Tabela zawiera informacje o lekcjach zarówno tych na studiach, oraz tych możliwych do kupienia pojedynczo, posida klucz główny (LessonID), przedmiot i zjazd do którego jest przypisana dana lekcja, oraz nauczyciela który ją prowadzi (SubjectID, GatheringID, TeacherID) zawiera temat, datę, typ, język prowadzenia, cenę i czas trwania (TopicID, Date, Type, Language, Price, Duration).
+Tabela zawiera informacje o lekcjach zarówno tych na studiach, oraz tych możliwych do kupienia pojedynczo, posida klucz główny (LessonID), przedmiot i zjazd do którego jest przypisana dana lekcja, oraz nauczyciela który ją prowadzi (SubjectID, GatheringID, Teacher) zawiera temat, datę, typ, język prowadzenia, cenę i czas trwania (TopicID, Date, Type, Language, Price, Duration).
 
 ```sql
 CREATE TABLE [dbo].[Lessons](
@@ -334,7 +331,7 @@ CREATE TABLE [dbo].[Lessons](
 	[Type] [nchar](10) NOT NULL,
 	[Language] [nchar](10) NOT NULL,
 	[Price] [int] NOT NULL,
-	[Duration] [nchar](10) NULL,
+	[Duration] [time](7) NULL,
  CONSTRAINT [PK_Lessons] PRIMARY KEY CLUSTERED 
 (
 	[LessonID] ASC
@@ -358,7 +355,7 @@ ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [FK_Lessons_Topics]
 ```
 
 12. LessonsAttendance:
-Tabela posiada informacje o obecności studentów na lekcjach, posiada klucz główny (LessonsAttendanceID), dla każdego studenta przypisuje czy był obecny na danej lekcji, na którą jest zapisany (LessonID, StudentID, Attendance).
+Tabela posiada informacje o obecności studentów na lekcjach, posiada klucz główny (LessonsAttendenseID), dla każdego studenta przypisuje czy był obecny na danej lekcji, na którą jest zapisany (LessonID, StudentID, Attendance).
 
 ```sql
 CREATE TABLE [dbo].[LessonsAttendance](
@@ -428,18 +425,18 @@ ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [FK_Modules_Courses]
 ```
 
 15. Meetings:
-Tabela zawiera dane o spotkaniach odbywających się w ramach konkretnego modułu, posiada klucz główny (MeetingID), przypisuje spotkanie do modułu, zawiera datę odbycia się i język prowadzenia oraz typ (ModuleID, Date, Language, Type), miejsce odbywania się modułu, link do ewentualnego spotlania online, nauczyciela prowadzącego i tłumacza (Place, Link, TeacherID, TranslatorID).
+Tabela zawiera dane o spotkaniach odbywających się w ramach konkretnego modułu, posiada klucz główny (MeetingID), przypisuje spotkanie do modułu, zawiera datę odbycia się i język prowadzenia oraz typ (ModuleID, Date, LanguageID, Type), miejsce odbywania się modułu, link do ewentualnego spotlania online, nauczyciela prowadzącego i tłumacza (Place, Link, TeacherID, TranslatorID).
 
 ```sql
 CREATE TABLE [dbo].[Meetings](
 	[MeetingID] [int] NOT NULL,
 	[ModuleID] [int] NOT NULL,
+	[LanguageID] [int] NOT NULL,
 	[Date] [date] NOT NULL,
-	[Language] [nchar](10) NOT NULL,
 	[Type] [nchar](10) NOT NULL,
 	[Place] [nchar](10) NULL,
 	[Link] [nchar](30) NULL,
-	[TeacherID] [int] NULL,
+	[TeacherID] [int] NOT NULL,
 	[TranslatorID] [int] NULL,
  CONSTRAINT [PK_Meetings] PRIMARY KEY CLUSTERED 
 (
@@ -464,7 +461,7 @@ ALTER TABLE [dbo].[Meetings] CHECK CONSTRAINT [FK_Meetings_Translators]
 ```
 
 16. CourseAttendace:
-Tabela posiada informacje o obecności studentów na spotkaniach w donym module kursu, posiada klucz główny (CourseAttendanceID), dla każdego studenta przypisuje czy był obecny na danym spotkaniu, na które jest zapisany (MeetingID, StudentID, Attendance).
+Tabela posiada informacje o obecności studentów na spotkaniach w donym module kursu, posiada klucz główny (AttendanceID), dla każdego studenta przypisuje czy był obecny na danym spotkaniu, na które jest zapisany (MeetingID, StudentID, Attendance).
 
 ```sql
 CREATE TABLE [dbo].[CourseAttendance](
@@ -490,12 +487,12 @@ ALTER TABLE [dbo].[CourseAttendance] CHECK CONSTRAINT [FK_Attendance_Students]
 ```
 
 17. Orders:
-Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia. 
+Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia (StudentID, OrderDate). 
 ```sql
 CREATE TABLE [dbo].[Orders](
 	[OrderID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
-	[OrderDate] [nchar](10) NOT NULL,
+	[OrderDate] [datetime] NOT NULL,
  CONSTRAINT [PK_Cart] PRIMARY KEY CLUSTERED 
 (
 	[OrderID] ASC
@@ -509,7 +506,7 @@ ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Students]
 ```
 
 18. Order_Details:
-Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Type, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
+Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
 
 ```sql
 CREATE TABLE [dbo].[Order_details](
@@ -523,16 +520,20 @@ CREATE TABLE [dbo].[Order_details](
 	[OrderDetailsID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-ALTER TABLE [dbo].[Order_details] WITH CHECK ADD CONSTRAINT [CK_Order_details_Discount] CHECK ([Discount] >= 0 AND [Discount] < 1);
 
 ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Cart_details_Cart] FOREIGN KEY([OrderID])
 REFERENCES [dbo].[Orders] ([OrderID])
 
 ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Cart_details_Cart]
+
+ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Order_details_Enrollment] FOREIGN KEY([EnrollmentID])
+REFERENCES [dbo].[Enrollment] ([EnrollmentID])
+
+ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Order_details_Enrollment]
 ```
 
 19. Payments:
-Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem(OrderID), zawiera datę, wartość oraz status płatności (Date, Value, Status), status jest typu bit.
+Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem(OrderID), zawiera datę, wartość oraz status płatności (Date, Value, IsCancelled), status jest typu bit.
 
 ```sql
 CREATE TABLE [dbo].[Payments](
@@ -574,7 +575,7 @@ CREATE TABLE [dbo].[Users](
 
 
 21. Students:
-Tabela posiada wszystkch zarejestrowanych studentów, zawiera klucz główny (StudentID). Przechowuje informacje o studentach takie jak: imię, nazwisko, datę urodzenia (FirstName, LastName, BirthDate), dane adresowe (Country, Region, City, ZipCode, Street), numer prywatnego i domowego telefonu (Phone, HomeNumber).
+Tabela posiada wszystkch zarejestrowanych studentów, zawiera klucz główny (StudentID). Przechowuje informacje o studentach takie jak: imię, nazwisko, datę urodzenia (FirstName, LastName, BirthDate), z jakiego kraju pochodzi i dane adresowe (CountryID, Country, Region, City, ZipCode, Street), numer prywatnego i domowego telefonu (Phone, HomeNumber).
 
 ```sql
 CREATE TABLE [dbo].[Students](
@@ -582,18 +583,23 @@ CREATE TABLE [dbo].[Students](
 	[FirstName] [nchar](20) NOT NULL,
 	[LastName] [nchar](20) NOT NULL,
 	[BirthDate] [date] NOT NULL,
-	[Country] [nchar](20) NOT NULL,
+	[CountryID] [int] NOT NULL,
 	[Region] [nchar](20) NOT NULL,
 	[City] [nchar](20) NOT NULL,
 	[ZipCode] [nchar](10) NOT NULL,
 	[Street] [nchar](20) NOT NULL,
-	[Phone] [nchar](15) NOT NULL,
+	[Phone] [nchar](20) NOT NULL,
 	[HomeNumber] [nchar](15) NULL,
  CONSTRAINT [PK_Students] PRIMARY KEY CLUSTERED 
 (
 	[StudentID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Students]  WITH CHECK ADD  CONSTRAINT [FK_Students_Countries] FOREIGN KEY([CountryID])
+REFERENCES [dbo].[Countries] ([CountryID])
+
+ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [FK_Students_Countries]
 
 ALTER TABLE [dbo].[Students]  WITH CHECK ADD  CONSTRAINT [FK_Students_Users] FOREIGN KEY([StudentID])
 REFERENCES [dbo].[Users] ([UserID])
@@ -602,11 +608,12 @@ ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [FK_Students_Users]
 ```
 
 22. Employees:
-Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: imię, nazwisko, datę zatrudnienia, pensje, email, numer telefonu oraz miasto.
+Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: pozycję, imię, nazwisko (PositionID, FirstName, LastName), datę zatrudnienia, pensje, email, numer telefonu oraz miasto (HireDate, Salary, Email, Phone, City).
 
 ```sql
 CREATE TABLE [dbo].[Employees](
 	[EmployeeID] [int] NOT NULL,
+	[PositionID] [int] NULL,
 	[FirstName] [nchar](20) NOT NULL,
 	[LastName] [nchar](20) NOT NULL,
 	[HireDate] [date] NOT NULL,
@@ -624,6 +631,11 @@ CREATE TABLE [dbo].[Employees](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
+ALTER TABLE [dbo].[Employees]  WITH CHECK ADD  CONSTRAINT [FK_Employees_Position] FOREIGN KEY([PositionID])
+REFERENCES [dbo].[Positions] ([PositionID])
+
+ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [FK_Employees_Position]
+
 ALTER TABLE [dbo].[Employees]  WITH CHECK ADD  CONSTRAINT [FK_Employees_Users] FOREIGN KEY([EmployeeID])
 REFERENCES [dbo].[Users] ([UserID])
 
@@ -635,13 +647,13 @@ ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CK_Salary]
 ```
 
 23. TeachingStaff:
-Tabela zawiera inforamacje o kadrze nauczycielskiej, posiada klucz główny (TeacherID) oraz informajce o tym w jakim języku prowadzi zajęcia i jego stopień naukowy (Language, Degree).
+Tabela zawiera inforamacje o kadrze nauczycielskiej, posiada klucz główny (TeacherID) oraz informajce o tym w jakim języku prowadzi zajęcia i jego stopień naukowy (LanguageID, Degree).
 
 ```sql
 CREATE TABLE [dbo].[TeachingStaff](
 	[TeacherID] [int] NOT NULL,
-	[Language] [nchar](15) NOT NULL,
-	[Degree] [nchar](20) NOT NULL,
+	[LanguageID] [int] NOT NULL,
+	[Degree] [nchar](30) NOT NULL,
  CONSTRAINT [PK_TeachingStaff] PRIMARY KEY CLUSTERED 
 (
 	[TeacherID] ASC
@@ -660,12 +672,12 @@ ALTER TABLE [dbo].[TeachingStaff] CHECK CONSTRAINT [CK_TeachingStaff_Degree]
 
 
 24. Translators:
-Tabela zawiera inforamacje o tłumaczach, posiada klucz główny (TranslatorID) oraz informacje o języku z którego tłumaczy (Language).
+Tabela zawiera inforamacje o tłumaczach, posiada klucz główny (TranslatorID) oraz informacje o języku z którego tłumaczy (LanguageID).
 
 ```sql
 CREATE TABLE [dbo].[Translators](
 	[TranslatorID] [int] NOT NULL,
-	[Language] [nchar](15) NOT NULL,
+	[LanguageID] [int] NOT NULL,
  CONSTRAINT [PK_Translators] PRIMARY KEY CLUSTERED 
 (
 	[TranslatorID] ASC
@@ -676,6 +688,11 @@ ALTER TABLE [dbo].[Translators]  WITH CHECK ADD  CONSTRAINT [FK_Translators_Empl
 REFERENCES [dbo].[Employees] ([EmployeeID])
 
 ALTER TABLE [dbo].[Translators] CHECK CONSTRAINT [FK_Translators_Employees]
+
+ALTER TABLE [dbo].[Translators]  WITH CHECK ADD  CONSTRAINT [FK_Translators_Languages] FOREIGN KEY([LanguageID])
+REFERENCES [dbo].[Languages] ([LanguageID])
+
+ALTER TABLE [dbo].[Translators] CHECK CONSTRAINT [FK_Translators_Languages]
 ```
 
 
@@ -700,5 +717,110 @@ ALTER TABLE [dbo].[Administrators] CHECK CONSTRAINT [FK_Administrators_Employees
 
 
 
+26. Countries:
+Tabela zawiera informacje o krajach, posiada klucz główny (CountryID), nazwę kraju i język (CountryName, LanguageID).
 
-![](RackMultipart20231211-1-nauk65_html_3ac0213c98a5e4ca.png)
+```sql
+CREATE TABLE [dbo].[Countries](
+	[CountryID] [int] NOT NULL,
+	[CountryName] [nchar](20) NOT NULL,
+	[LanguageID] [int] NOT NULL,
+ CONSTRAINT [PK_Countries2] PRIMARY KEY CLUSTERED 
+(
+	[CountryID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [FK_Countries_Languages] FOREIGN KEY([LanguageID])
+REFERENCES [dbo].[Languages] ([LanguageID])
+
+ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [FK_Countries_Languages]
+```
+
+27. Languages:
+Tabela zawiera informacje o językach, posiada klucz główny (LanguageID) oraz nazwę języka (LanguageName).
+
+```sql
+CREATE TABLE [dbo].[Languages](
+	[LanguageID] [int] NOT NULL,
+	[LanguageName] [nchar](20) NOT NULL,
+ CONSTRAINT [PK_Languages] PRIMARY KEY CLUSTERED 
+(
+	[LanguageID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+```
+
+28. Position
+Tabela zawiera informacje o stanowiskach, posiada klucz główny (PositionID) oraz nazwę stanowski w postaci znakowej (PositionName).
+
+```sql
+CREATE TABLE [dbo].[Positions](
+	[PositionID] [int] NOT NULL,
+	[PositionName] [nchar](15) NOT NULL,
+ CONSTRAINT [PK_Position] PRIMARY KEY CLUSTERED 
+(
+	[PositionID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+```
+Widoki
+
+1. AttendanceMeetingView
+Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu podaje sumę obecności, łączną liczbę spotkań oraz procentową obecność. Umożliwia analizę uczestnictwa studentów w ramach konkretnych kursów i modułów.
+
+```sql
+CREATE VIEW [dbo].[AttendanceMeetingView] AS
+SELECT
+    c.CourseID,
+    a.StudentID,
+	m.ModuleID,
+    SUM(CAST(a.Attendance AS INT)) AS Attendance,
+    COUNT(CAST(a.Attendance AS INT) * 100) AS AllMeeting,
+    CONCAT(AVG(CAST(a.Attendance AS INT) * 100), '%') AS AttendancePercentage
+FROM
+    Courses AS c
+INNER JOIN
+    Modules AS m ON m.CourseID = c.CourseID
+INNER JOIN
+    Meetings AS me ON me.ModuleID = m.ModuleID
+INNER JOIN
+    CourseAttendance AS a ON a.MeetingID = me.MeetingID
+GROUP BY
+    c.CourseID, a.StudentID, m.ModuleID;
+```
+
+<p align="center">
+  <img src="views/AttendanceMeetingView.png" alt="AttendanceMeetingView">
+</p>
+
+
+2. CoursesPass
+Widok ten identyfikuje, czy studenci zaliczyli kurs na podstawie procentowej obecności w poszczególnych modułach. Dla każdego kursu podaje procentową obecność, łączną liczbę modułów oraz status "Pass" lub "Fail" w zależności od spełnienia warunku procentowej obecności (80% lub więcej). Umożliwia monitorowanie postępów studentów i ocenę ich osiągnięć w kontekście kursów.
+
+```sql
+CREATE VIEW [dbo].[CoursesPass] As
+SELECT
+    amv.CourseID,
+    amv.StudentID,
+    CONCAT((COUNT(amv.ModuleID) * 100) / c.ModulesNo, '%') AS AttendancePercentage,
+	c.ModulesNo,
+    CASE
+        WHEN ((COUNT(amv.ModuleID) * 100) / c.ModulesNo) >= 80 THEN 'Pass'
+        ELSE 'Fail'
+    END AS Result
+FROM
+    AttendanceMeetingView AS amv
+INNER JOIN
+    Courses AS c ON amv.CourseID = c.CourseID
+WHERE
+    AttendancePercentage = '100%'
+GROUP BY
+    amv.CourseID,
+    amv.StudentID,
+    c.ModulesNo;
+```
+<p align="center">
+  <img src="views/CoursesPass.png" alt="CoursesPass">
+</p>
+
