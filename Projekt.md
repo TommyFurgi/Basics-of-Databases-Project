@@ -22,27 +22,27 @@
 - Przeglądanie listy, możliwość przeglądania listy usług, na które dany użytkownik jest zapisany.
 - Odbiera dyplom, użytkownik może odebrać dyplom, gdy zostanie on wystawiony przez administratora.
 
-3. Koordynator
+4. Koordynator
 
 - Odraczanie płatności, dyrektor szkoły ma możliwość odroczenia płatności na określony czas.
 - Wgląd do kursów oraz webinarów, dyrektor ma możliwość wglądu do danych o kursach i webinarach prowadzonych przez jego pracowników
 - Zatwierdzanie programu studiów, dyrektor ma dostęp do ułożonych przez pracowników sylabusów przed opublikowaniem ich oraz możliwość zatwierdzania i wprowadzania poprawek do nich
 - Zatwierdzanie nowych kursów i webinarów, dyrektor zatwierdza bądź odrzuca każdy nowy kurs, webinar, stworzony przez jego pracowników
 
-4. Menadżer
+5. Menadżer
 
 - Zarządzaniem limitem miejsc, menadżer ustala maksymalną liczbę osób która może uczestniczyć w danym webinarze, szkoleniu
 - Wystawianie dyplomów, menadżer wystawia dyplom użytkownikowi, który spełnił wszystkie regulaminowe przesłanki co to do tego.
 - Zarządzanie ofertą, menadżer ma możliwość edycji obecnej oferty jak i możliwość dodawania nowych kursów, szkoleń.
 
-5. Prowadzący/Wykładowca
+6. Prowadzący/Wykładowca
 
 - Dostęp do swoich webinarów, każdy prowadzący ma nielimitowany czasowo dostęp do nagrań wszystkich swoich webinarów
 - Możliwość edycji modułów kursu, prowadzący mają możliwość wprowadzania poprawek oraz modyfikacji materiałów znajdujących się na prowadzonych przez siebie kursach
 - Dostęp do systemu ocen i obecności, prowadzący ma dostęp do systemu, w którym może swobodnie zapisywać oraz zmieniać oceny i obecności uczestników jego kursów
 - Ułożenie sylabusu, prowadzący musi ułożyć sylabus do każdego z prowadzonych przez siebie przedmiotów w określonym terminie przed rozpoczęciem studiów
 
-6. System
+7. System
 
 - Generowanie linków do płatności, system sam, automatycznie generuje link do płatności, gdy użytkownik chce opłacić zamówienie.
 - Wysyłanie powiadomień, uczestnik spotkania dostaje powiadomienia, gdy rozpoczyna się spotkanie, w którym ma uczestniczyć.
@@ -56,14 +56,13 @@
 
 **Tabele:**
 1. Enrollment:
-Tabela przechowuje podstawowe dane o wszystkich zapisach. Zawiera informacje o osobie (StudentID) dokonującej zapisu na wydarzenie (OfferID), datę wydarzenia oraz datę zapisu (event_date, enroll_date).
+Tabela przechowuje podstawowe dane o wszystkich zapisach. Zawiera informacje o osobie (StudentID) dokonującej zapisu na wydarzenie (OfferID) oraz datę zapisu (enroll_date).
 
 ```sql
 CREATE TABLE [dbo].[Enrollment](
 	[EnrollmentID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[OfferID] [int] NOT NULL,
-	[Event_date] [datetime] NOT NULL,
 	[Enroll_date] [datetime] NOT NULL,
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
@@ -100,6 +99,18 @@ CREATE TABLE [dbo].[Offers](
 	[OfferID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Name_Length] CHECK  ((len([Name])>=(5)))
+
+ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Name_Length]
+
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Price_NonNegative] CHECK  (([Price]>=(0)))
+
+ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Price_NonNegative]
+
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Type_Values] CHECK  (([Type]='Gathering' OR [Type]='Lesson' OR [Type]='Studies' OR [Type]='Courses' OR [Type]='Webinar'))
+
+ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Type_Values]
 ```
 
 
@@ -129,10 +140,14 @@ ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [FK_Webinar_TeachingStaf
 REFERENCES [dbo].[TeachingStaff] ([TeacherID])
 
 ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [FK_Webinar_TeachingStaff]
+
+ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [CHK_Webinar_WebinarName_Length] CHECK  ((len([WebinarName])>(5)))
+
+ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [CHK_Webinar_WebinarName_Length]
 ```
 
 4. Studies:
-Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów i ilości semestrów na danym kierunku (TeacherID, StudentCapacity, SemestrNo).
+Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów na danym studium (TeacherID, StudentCapacity).
 
 ```sql
 CREATE TABLE [dbo].[Studies](
@@ -141,7 +156,6 @@ CREATE TABLE [dbo].[Studies](
 	[Fee] [money] NOT NULL,
 	[TeacherID] [int] NOT NULL,
 	[StudentCapacity] [int] NOT NULL,
-	[SemestersNo] [int] NOT NULL,
  CONSTRAINT [PK_Studies_1] PRIMARY KEY CLUSTERED 
 (
 	[StudiesID] ASC
@@ -157,6 +171,19 @@ ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [FK_Studies_TeachingStaf
 REFERENCES [dbo].[TeachingStaff] ([TeacherID])
 
 ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [FK_Studies_TeachingStaff]
+
+ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_Fee_NonNegative] CHECK  (([Fee]>=(0)))
+
+ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Fee_NonNegative]
+
+ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_StudentCapacity_Minimum] CHECK  (([StudentCapacity]>=(10)))
+
+ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_StudentCapacity_Minimum]
+
+ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_Studies_Name_Length] CHECK  ((len([Name])>(5)))
+
+ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Studies_Name_Length]
+
 ```
 
 5. Courses:
@@ -188,6 +215,30 @@ ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [FK_Courses_Topics] FORE
 REFERENCES [dbo].[Topics] ([TopicID])
 
 ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [FK_Courses_Topics]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_Courses_CourseName_Length] CHECK  ((len([CourseName])>(5)))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_Courses_CourseName_Length]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_Deposit_Range] CHECK  (([Deposit]>=(0) AND [Deposit]<=[FullPrice]))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_Deposit_Range]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_Discount_Range] CHECK  (([Discount]>=(0) AND [Discount]<=(1)))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_Discount_Range]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_FullPrice_NonNegative] CHECK  (([FullPrice]>=(0)))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_FullPrice_NonNegative]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_ModulesNo_Positive] CHECK  (([ModulesNo]>(0)))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_ModulesNo_Positive]
+
+ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_PaymentDay_BeforeStart] CHECK  (([PaymentDay]<=dateadd(day,(-3),[StartDate])))
+
+ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_PaymentDay_BeforeStart]
 ```
 
 6. Gatherings:
@@ -234,6 +285,9 @@ REFERENCES [dbo].[Studies] ([StudiesID])
 
 ALTER TABLE [dbo].[Semesters] CHECK CONSTRAINT [FK_Semesters_Studies]
 
+ALTER TABLE [dbo].[Semesters]  WITH CHECK ADD  CONSTRAINT [CHK_Semester_no_Positive] CHECK  (([Semester_no]>(0)))
+
+ALTER TABLE [dbo].[Semesters] CHECK CONSTRAINT [CHK_Semester_no_Positive]
 ```
 
 8. Practices:
@@ -263,6 +317,10 @@ ALTER TABLE [dbo].[Practices]  WITH CHECK ADD  CONSTRAINT [FK_Practices_Teaching
 REFERENCES [dbo].[TeachingStaff] ([TeacherID])
 
 ALTER TABLE [dbo].[Practices] CHECK CONSTRAINT [FK_Practices_TeachingStaff]
+
+ALTER TABLE [dbo].[Practices]  WITH CHECK ADD  CONSTRAINT [CHK_MeetingsCount_Positive] CHECK  (([MeetingsCount]>(0)))
+
+ALTER TABLE [dbo].[Practices] CHECK CONSTRAINT [CHK_MeetingsCount_Positive]
 ```
 
 9. PractiseAttendance:
@@ -315,6 +373,10 @@ ALTER TABLE [dbo].[Subjects]  WITH CHECK ADD  CONSTRAINT [FK_Subjects_Semesters]
 REFERENCES [dbo].[Semesters] ([SemesterID])
 
 ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [FK_Subjects_Semesters]
+
+ALTER TABLE [dbo].[Subjects]  WITH CHECK ADD  CONSTRAINT [CHK_Subjects_SubjectName_Length] CHECK  ((len([SubjectName])>(5)))
+
+ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [CHK_Subjects_SubjectName_Length]
 ```
 
 11. Lessons:
@@ -352,6 +414,10 @@ ALTER TABLE [dbo].[Lessons]  WITH CHECK ADD  CONSTRAINT [FK_Lessons_Topics] FORE
 REFERENCES [dbo].[Topics] ([TopicID])
 
 ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [FK_Lessons_Topics]
+
+ALTER TABLE [dbo].[Lessons]  WITH CHECK ADD  CONSTRAINT [CHK_Lessons_Type] CHECK  (([Type]='online' OR [Type]='hybrid' OR [Type]='stationary'))
+
+ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [CHK_Lessons_Type]
 ```
 
 12. LessonsAttendance:
@@ -398,6 +464,10 @@ CREATE TABLE [dbo].[Topics](
 	[TopicID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Topics]  WITH CHECK ADD  CONSTRAINT [CHK_Topics_TopicName_Length] CHECK  ((len([TopicName])>(5)))
+
+ALTER TABLE [dbo].[Topics] CHECK CONSTRAINT [CHK_Topics_TopicName_Length]
 ```
 
 14. Modules:
@@ -422,6 +492,18 @@ ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [FK_Modules_Courses] FOR
 REFERENCES [dbo].[Courses] ([CourseID])
 
 ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [FK_Modules_Courses]
+
+ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Date_Order] CHECK  (([EndDate]>[StartDate]))
+
+ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Date_Order]
+
+ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Title_Length] CHECK  ((len([Title])>(5)))
+
+ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Title_Length]
+
+ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Type_Values] CHECK  (([Type]='online' OR [Type]='hybrid' OR [Type]='stationary'))
+
+ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Type_Values]
 ```
 
 15. Meetings:
@@ -458,6 +540,10 @@ ALTER TABLE [dbo].[Meetings]  WITH CHECK ADD  CONSTRAINT [FK_Meetings_Translator
 REFERENCES [dbo].[Translators] ([TranslatorID])
 
 ALTER TABLE [dbo].[Meetings] CHECK CONSTRAINT [FK_Meetings_Translators]
+
+ALTER TABLE [dbo].[Meetings]  WITH CHECK ADD  CONSTRAINT [CHK_Meetings_Type_Values] CHECK  (([Type]='online' OR [Type]='hybrid' OR [Type]='stationary'))
+
+ALTER TABLE [dbo].[Meetings] CHECK CONSTRAINT [CHK_Meetings_Type_Values]
 ```
 
 16. CourseAttendace:
@@ -530,6 +616,14 @@ ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Order_details_
 REFERENCES [dbo].[Enrollment] ([EnrollmentID])
 
 ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Order_details_Enrollment]
+
+ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [CHK_OrderDetails_Discount_Range] CHECK  (([Discount]>=(0) AND [Discount]<=(1)))
+
+ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [CHK_OrderDetails_Discount_Range]
+
+ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [CHK_OrderDetails_Value_NonNegative] CHECK  (([Value]>=(0)))
+
+ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [CHK_OrderDetails_Value_NonNegative]
 ```
 
 19. Payments:
@@ -552,6 +646,10 @@ ALTER TABLE [dbo].[Payments]  WITH CHECK ADD  CONSTRAINT [FK_Payments_Cart] FORE
 REFERENCES [dbo].[Orders] ([OrderID])
 
 ALTER TABLE [dbo].[Payments] CHECK CONSTRAINT [FK_Payments_Cart]
+
+ALTER TABLE [dbo].[Payments]  WITH CHECK ADD  CONSTRAINT [CHK_Payments_Value_Positive] CHECK  (([Value]>(0)))
+
+ALTER TABLE [dbo].[Payments] CHECK CONSTRAINT [CHK_Payments_Value_Positive]
 ```
 
 20. Users:
@@ -571,6 +669,18 @@ CREATE TABLE [dbo].[Users](
 	[Login] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Login_Length] CHECK  ((len([Login])>=(5)))
+
+ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Login_Length]
+
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Password_Digit] CHECK  ((patindex('%[0-9]%',[Password])>(0)))
+
+ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Password_Digit]
+
+ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Password_Length] CHECK  ((len([Password])>=(8)))
+
+ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Password_Length]
 ```
 
 
@@ -605,15 +715,19 @@ ALTER TABLE [dbo].[Students]  WITH CHECK ADD  CONSTRAINT [FK_Students_Users] FOR
 REFERENCES [dbo].[Users] ([UserID])
 
 ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [FK_Students_Users]
+
+ALTER TABLE [dbo].[Students]  WITH CHECK ADD  CONSTRAINT [CHK_Students_BirthDate] CHECK  (([BirthDate]<=getdate()))
+
+ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [CHK_Students_BirthDate]
 ```
 
 22. Employees:
-Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: pozycję, imię, nazwisko (PositionID, FirstName, LastName), datę zatrudnienia, pensje, email, numer telefonu oraz miasto (HireDate, Salary, Email, Phone, City).
+Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: pozycję, imię, nazwisko (PositionID, FirstName, LastName), datę zatrudnienia, pensje, email, numer telefonu oraz miasto (HireDate, Salary, Email, Phone, City), dodatkowo informację czy dany pracownik wciąż dla nas pracuje(IsActive).
 
 ```sql
 CREATE TABLE [dbo].[Employees](
 	[EmployeeID] [int] NOT NULL,
-	[PositionID] [int] NULL,
+	[PositionID] [int] NOT NULL,
 	[FirstName] [nchar](20) NOT NULL,
 	[LastName] [nchar](20) NOT NULL,
 	[HireDate] [date] NOT NULL,
@@ -621,6 +735,7 @@ CREATE TABLE [dbo].[Employees](
 	[Email] [nchar](30) NOT NULL,
 	[Phone] [nchar](15) NOT NULL,
 	[City] [nchar](20) NOT NULL,
+	[IsActive] [bit] NOT NULL,
  CONSTRAINT [PK_Employees] PRIMARY KEY CLUSTERED 
 (
 	[EmployeeID] ASC
@@ -641,9 +756,14 @@ REFERENCES [dbo].[Users] ([UserID])
 
 ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [FK_Employees_Users]
 
-ALTER TABLE [dbo].[Employees]  WITH CHECK ADD  CONSTRAINT [CK_Salary] CHECK  (([Salary]>=(0)))
+ALTER TABLE [dbo].[Employees]  WITH CHECK ADD  CONSTRAINT [CHK_Employees_Email_Format] CHECK  ((charindex('@',[Email])>(0)))
 
-ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CK_Salary]
+ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CHK_Employees_Email_Format]
+
+ALTER TABLE [dbo].[Employees]  WITH CHECK ADD  CONSTRAINT [CHK_Employees_Salary] CHECK  (([Salary]>(0)))
+
+ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CHK_Employees_Salary]
+
 ```
 
 23. TeachingStaff:
@@ -735,6 +855,10 @@ ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [FK_Countries_Language
 REFERENCES [dbo].[Languages] ([LanguageID])
 
 ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [FK_Countries_Languages]
+
+ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [CHK_Countries_CountryName_Length] CHECK  ((len([CountryName])>=(3)))
+
+ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [CHK_Countries_CountryName_Length]
 ```
 
 27. Languages:
@@ -749,6 +873,10 @@ CREATE TABLE [dbo].[Languages](
 	[LanguageID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Languages]  WITH CHECK ADD  CONSTRAINT [CHK_Languages_LanguageName_Length] CHECK  ((len([LanguageName])>=(3)))
+
+ALTER TABLE [dbo].[Languages] CHECK CONSTRAINT [CHK_Languages_LanguageName_Length]
 ```
 
 28. Position
@@ -763,6 +891,10 @@ CREATE TABLE [dbo].[Positions](
 	[PositionID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+
+ALTER TABLE [dbo].[Positions]  WITH CHECK ADD  CONSTRAINT [CHK_Positions_PositionName] CHECK  (([PositionName]='director' OR [PositionName]='administrator' OR [PositionName]='educator' OR [PositionName]='menager'))
+
+ALTER TABLE [dbo].[Positions] CHECK CONSTRAINT [CHK_Positions_PositionName]
 ```
 Widoki
 
@@ -823,4 +955,15 @@ GROUP BY
 <p align="center">
   <img src="views/CoursesPass.png" alt="CoursesPass">
 </p>
+
+
+3.
+
+```sql
+Select CourseID, CourseName, (
+	SELECT SUM(p.Value) FROM Payments p
+	WHERE p.IsCancelled IS NOT Null AND p.OrderID = c.CourseID
+) zysk FROM Courses c
+
+```
 
