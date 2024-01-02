@@ -1,1 +1,0 @@
-dodać na samym końcu pracowników którzy już nie pracują i widok który ich wyświetli 

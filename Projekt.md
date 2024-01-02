@@ -55,33 +55,8 @@
 
 
 **Tabele:**
-1. Enrollment:
-Tabela przechowuje podstawowe dane o wszystkich zapisach. Zawiera informacje o osobie (StudentID) dokonującej zapisu na wydarzenie (OfferID) oraz datę zapisu (enroll_date).
 
-```sql
-CREATE TABLE [dbo].[Enrollment](
-	[EnrollmentID] [int] NOT NULL,
-	[StudentID] [int] NOT NULL,
-	[OfferID] [int] NOT NULL,
-	[Enroll_date] [datetime] NOT NULL,
- CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
-(
-	[EnrollmentID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-
-ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Offers] FOREIGN KEY([OfferID])
-REFERENCES [dbo].[Offers] ([OfferID])
-
-ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Offers]
-
-ALTER TABLE [dbo].[Enrollment]  WITH CHECK ADD  CONSTRAINT [FK_Enrollment_Students] FOREIGN KEY([StudentID])
-REFERENCES [dbo].[Students] ([StudentID])
-
-ALTER TABLE [dbo].[Enrollment] CHECK CONSTRAINT [FK_Enrollment_Students]
-```
-
-2. Offers:
+1. Offers:
 Tabela zawiera informacje o wszystkich wydarzeniach jakie są oferowane. Zawiera idetyfikator wydarzenia (OfferID), nazwe, opis oraz typ (Name, Description, Type), typ określa czy jest to webinar, kurs, studia czy pojedyńcza lekcja. Dodatkowo miejsce wydarzenia oraz jego całkowity koszt (Place, Price).
 
 <br>
@@ -115,7 +90,7 @@ ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Type_Values]
 
 
 
-3. Webinar:
+2. Webinar:
 Tabela zawiera informacje o webianrach, zawiera klucz główny (WebinarID), nazwę oraz datę rozpoczęcia (WebinarName, Date), inforamcje o osbie, która to prowadzi (TeacherID) i link do webinaru (MeetingLink).
 
 ```sql
@@ -146,7 +121,7 @@ ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [CHK_Webinar_WebinarName
 ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [CHK_Webinar_WebinarName_Length]
 ```
 
-4. Studies:
+3. Studies:
 Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów na danym studium (TeacherID, StudentCapacity).
 
 ```sql
@@ -186,7 +161,7 @@ ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Studies_Name_Length]
 
 ```
 
-5. Courses:
+4. Courses:
 Tabela zawiera spis wszystkich kursów z kluczem głównym (CourseID), posiada informację o temacie kursu oraz jego nazwie (TopicID, CourseName), a także dacie rozpoczęcia, ilości modułów z których kurs się składa i dacie zapłaty (StartDate, ModulesNo, PaymentDay), całkowitej kwocie jaką należy za kurs zapłacić, kwocie zaliczki oraz zniżce (FullPrice, Deposit, Discount).
 
 ```sql
@@ -241,7 +216,7 @@ ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_PaymentDay_BeforeSt
 ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_PaymentDay_BeforeStart]
 ```
 
-6. Gatherings:
+5. Gatherings:
 Tabela zawiera informacje o zjazdach, posaida klucz główny (GatheringID) i semestr, w ramach którego odbywa się dany zjazd oraz datę w której zjazd się odbywa (SemestrID, Date).
 
 ```sql
@@ -266,7 +241,7 @@ REFERENCES [dbo].[Semesters] ([SemesterID])
 ALTER TABLE [dbo].[Gatherings] CHECK CONSTRAINT [FK_Gatherings_Semesters]
 ```
 
-7. Semesters:
+6. Semesters:
 W tabeli znajdują się informacje o wszystkich semestrach na wszystkich kierunkach studiów, klucz główny to (SemesterID), zawiera też informacje o kierunku studiów na którym semestr się znajduje, numerze semestru(StudiesID, Semester_no).
 
 ```sql
@@ -290,7 +265,7 @@ ALTER TABLE [dbo].[Semesters]  WITH CHECK ADD  CONSTRAINT [CHK_Semester_no_Posit
 ALTER TABLE [dbo].[Semesters] CHECK CONSTRAINT [CHK_Semester_no_Positive]
 ```
 
-8. Practices:
+7. Practices:
 Tabela zawiera dane o praktykach, posiada klucz główny (PractiseID), semestrze na którym się odbywają i pracowniku, który je prowadzi (SemesterID, EmployeeID), posiada informacje o miejscu, w kótrym praktyki się odbywają, dacie rozpoczęcia, ilości spotkań oraz potrzebnym wyposażeniu (Address, StartDate, MeetingsCount, RequiredEquipment).
 
 ```sql
@@ -323,7 +298,7 @@ ALTER TABLE [dbo].[Practices]  WITH CHECK ADD  CONSTRAINT [CHK_MeetingsCount_Pos
 ALTER TABLE [dbo].[Practices] CHECK CONSTRAINT [CHK_MeetingsCount_Positive]
 ```
 
-9. PractiseAttendance:
+8. PractiseAttendance:
 Tabela posiada informacje o obecności studentów na praktykach, posiada klucz główny (PractiseAttendanceID), dla każdego studenta przypisuje czy był obecny na danych praktykach, na które jest zapisany (PractiseID, StudentID, Attendance).
 
 ```sql
@@ -354,7 +329,7 @@ REFERENCES [dbo].[Students] ([StudentID])
 ALTER TABLE [dbo].[PractiseAttendance] CHECK CONSTRAINT [FK_PractiseAttendance_Students]
 ```
 
-10. Subjects:
+9. Subjects:
 Tabela zawiera informacje o przedmiotach występujących w semestrach z kluczem głównym (SubjectID), przypisuje przemiot do określonego semestru, posiada nazwę przedmiotu oraz jego opis (SemesterID, SubjectName, Description).
 
 ```sql
@@ -379,7 +354,7 @@ ALTER TABLE [dbo].[Subjects]  WITH CHECK ADD  CONSTRAINT [CHK_Subjects_SubjectNa
 ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [CHK_Subjects_SubjectName_Length]
 ```
 
-11. Lessons:
+10. Lessons:
 Tabela zawiera informacje o lekcjach zarówno tych na studiach, oraz tych możliwych do kupienia pojedynczo, posida klucz główny (LessonID), przedmiot i zjazd do którego jest przypisana dana lekcja, oraz nauczyciela który ją prowadzi (SubjectID, GatheringID, Teacher) zawiera temat, datę, typ, język prowadzenia, cenę i czas trwania (TopicID, Date, Type, Language, Price, Duration).
 
 ```sql
@@ -420,7 +395,7 @@ ALTER TABLE [dbo].[Lessons]  WITH CHECK ADD  CONSTRAINT [CHK_Lessons_Type] CHECK
 ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [CHK_Lessons_Type]
 ```
 
-12. LessonsAttendance:
+11. LessonsAttendance:
 Tabela posiada informacje o obecności studentów na lekcjach, posiada klucz główny (LessonsAttendenseID), dla każdego studenta przypisuje czy był obecny na danej lekcji, na którą jest zapisany (LessonID, StudentID, Attendance).
 
 ```sql
@@ -451,7 +426,7 @@ REFERENCES [dbo].[Students] ([StudentID])
 ALTER TABLE [dbo].[LessonsAttendance] CHECK CONSTRAINT [FK_LessonsAttendance_Students1]
 ```
 
-13. Topics:
+12. Topics:
 Tabela posiada dane o tematach kursów, bądź lekcji, posiada klucz główny (TopicID) oraz nazwę tematu i jego opis (TopicName, Description).
 
 ```sql
@@ -470,7 +445,7 @@ ALTER TABLE [dbo].[Topics]  WITH CHECK ADD  CONSTRAINT [CHK_Topics_TopicName_Len
 ALTER TABLE [dbo].[Topics] CHECK CONSTRAINT [CHK_Topics_TopicName_Length]
 ```
 
-14. Modules:
+13. Modules:
 Tabela zawiera wszystkie moduły, znajdujące się kursach, posiada klucz główny (ModuleID), informacje o kursie, do którego moduł należy oraz jego tytule i typie (CourseID, Title, Type), a także dacie zakończenia i rozpoczęcia oraz klasie, w której się odbywa (EndDate, StartDate, Classroom).
 
 ```sql
@@ -506,7 +481,7 @@ ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Type_Values
 ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Type_Values]
 ```
 
-15. Meetings:
+14. Meetings:
 Tabela zawiera dane o spotkaniach odbywających się w ramach konkretnego modułu, posiada klucz główny (MeetingID), przypisuje spotkanie do modułu, zawiera datę odbycia się i język prowadzenia oraz typ (ModuleID, Date, LanguageID, Type), miejsce odbywania się modułu, link do ewentualnego spotlania online, nauczyciela prowadzącego i tłumacza (Place, Link, TeacherID, TranslatorID).
 
 ```sql
@@ -546,7 +521,7 @@ ALTER TABLE [dbo].[Meetings]  WITH CHECK ADD  CONSTRAINT [CHK_Meetings_Type_Valu
 ALTER TABLE [dbo].[Meetings] CHECK CONSTRAINT [CHK_Meetings_Type_Values]
 ```
 
-16. CourseAttendace:
+15. CourseAttendace:
 Tabela posiada informacje o obecności studentów na spotkaniach w donym module kursu, posiada klucz główny (AttendanceID), dla każdego studenta przypisuje czy był obecny na danym spotkaniu, na które jest zapisany (MeetingID, StudentID, Attendance).
 
 ```sql
@@ -572,7 +547,7 @@ REFERENCES [dbo].[Students] ([StudentID])
 ALTER TABLE [dbo].[CourseAttendance] CHECK CONSTRAINT [FK_Attendance_Students]
 ```
 
-17. Orders:
+16. Orders:
 Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia (StudentID, OrderDate). 
 ```sql
 CREATE TABLE [dbo].[Orders](
@@ -591,14 +566,14 @@ REFERENCES [dbo].[Students] ([StudentID])
 ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Students]
 ```
 
-18. Order_Details:
-Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
+17. Order_Details:
+Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, OfferID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
 
 ```sql
 CREATE TABLE [dbo].[Order_details](
 	[OrderDetailsID] [int] NOT NULL,
 	[OrderID] [int] NOT NULL,
-	[EnrollmentID] [int] NOT NULL,
+	[OfferID] [int] NOT NULL,
 	[Value] [money] NOT NULL,
 	[Discount] [float] NOT NULL,
  CONSTRAINT [PK_Cart_details] PRIMARY KEY CLUSTERED 
@@ -612,10 +587,10 @@ REFERENCES [dbo].[Orders] ([OrderID])
 
 ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Cart_details_Cart]
 
-ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Order_details_Enrollment] FOREIGN KEY([EnrollmentID])
-REFERENCES [dbo].[Enrollment] ([EnrollmentID])
+ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [FK_Order_details_Offers] FOREIGN KEY([OfferID])
+REFERENCES [dbo].[Offers] ([OfferID])
 
-ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Order_details_Enrollment]
+ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [FK_Order_details_Offers]
 
 ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [CHK_OrderDetails_Discount_Range] CHECK  (([Discount]>=(0) AND [Discount]<=(1)))
 
@@ -626,7 +601,7 @@ ALTER TABLE [dbo].[Order_details]  WITH CHECK ADD  CONSTRAINT [CHK_OrderDetails_
 ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [CHK_OrderDetails_Value_NonNegative]
 ```
 
-19. Payments:
+18. Payments:
 Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem(OrderID), zawiera datę, wartość oraz status płatności (Date, Value, IsCancelled), status jest typu bit.
 
 ```sql
@@ -652,7 +627,7 @@ ALTER TABLE [dbo].[Payments]  WITH CHECK ADD  CONSTRAINT [CHK_Payments_Value_Pos
 ALTER TABLE [dbo].[Payments] CHECK CONSTRAINT [CHK_Payments_Value_Positive]
 ```
 
-20. Users:
+19. Users:
 Tabela zawiera wszystkich użytkowników z całej bazy danych, posiada klucz główny (UserID), do tego dla każdego użytkownika przypisuje login i hasło (Login, Password).
 
 ```sql
@@ -684,7 +659,7 @@ ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Password_Length]
 ```
 
 
-21. Students:
+20. Students:
 Tabela posiada wszystkch zarejestrowanych studentów, zawiera klucz główny (StudentID). Przechowuje informacje o studentach takie jak: imię, nazwisko, datę urodzenia (FirstName, LastName, BirthDate), z jakiego kraju pochodzi i dane adresowe (CountryID, Country, Region, City, ZipCode, Street), numer prywatnego i domowego telefonu (Phone, HomeNumber).
 
 ```sql
@@ -721,7 +696,7 @@ ALTER TABLE [dbo].[Students]  WITH CHECK ADD  CONSTRAINT [CHK_Students_BirthDate
 ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [CHK_Students_BirthDate]
 ```
 
-22. Employees:
+21. Employees:
 Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: pozycję, imię, nazwisko (PositionID, FirstName, LastName), datę zatrudnienia, pensje, email, numer telefonu oraz miasto (HireDate, Salary, Email, Phone, City), dodatkowo informację czy dany pracownik wciąż dla nas pracuje(IsActive).
 
 ```sql
@@ -766,7 +741,7 @@ ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CHK_Employees_Salary]
 
 ```
 
-23. TeachingStaff:
+22. TeachingStaff:
 Tabela zawiera inforamacje o kadrze nauczycielskiej, posiada klucz główny (TeacherID) oraz informajce o tym w jakim języku prowadzi zajęcia i jego stopień naukowy (LanguageID, Degree).
 
 ```sql
@@ -791,7 +766,7 @@ ALTER TABLE [dbo].[TeachingStaff] CHECK CONSTRAINT [CK_TeachingStaff_Degree]
 ```
 
 
-24. Translators:
+23. Translators:
 Tabela zawiera inforamacje o tłumaczach, posiada klucz główny (TranslatorID) oraz informacje o języku z którego tłumaczy (LanguageID).
 
 ```sql
@@ -816,7 +791,7 @@ ALTER TABLE [dbo].[Translators] CHECK CONSTRAINT [FK_Translators_Languages]
 ```
 
 
-25. Administrators:
+24. Administrators:
 Tabela zawiera inforamacja o admnistarotach zawiera klucz głowny (AdminID) oraz data otrzymania uprawnień (Add_date).
 
 ```sql
@@ -837,7 +812,7 @@ ALTER TABLE [dbo].[Administrators] CHECK CONSTRAINT [FK_Administrators_Employees
 
 
 
-26. Countries:
+25. Countries:
 Tabela zawiera informacje o krajach, posiada klucz główny (CountryID), nazwę kraju i język (CountryName, LanguageID).
 
 ```sql
@@ -861,7 +836,7 @@ ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [CHK_Countries_Country
 ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [CHK_Countries_CountryName_Length]
 ```
 
-27. Languages:
+26. Languages:
 Tabela zawiera informacje o językach, posiada klucz główny (LanguageID) oraz nazwę języka (LanguageName).
 
 ```sql
@@ -879,7 +854,7 @@ ALTER TABLE [dbo].[Languages]  WITH CHECK ADD  CONSTRAINT [CHK_Languages_Languag
 ALTER TABLE [dbo].[Languages] CHECK CONSTRAINT [CHK_Languages_LanguageName_Length]
 ```
 
-28. Position
+27. Position
 Tabela zawiera informacje o stanowiskach, posiada klucz główny (PositionID) oraz nazwę stanowski w postaci znakowej (PositionName).
 
 ```sql
@@ -896,7 +871,7 @@ ALTER TABLE [dbo].[Positions]  WITH CHECK ADD  CONSTRAINT [CHK_Positions_Positio
 
 ALTER TABLE [dbo].[Positions] CHECK CONSTRAINT [CHK_Positions_PositionName]
 ```
-Widoki
+**Widoki:**
 
 1. AttendanceMeetingView
 Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu podaje sumę obecności, łączną liczbę spotkań oraz procentową obecność. Umożliwia analizę uczestnictwa studentów w ramach konkretnych kursów i modułów.
@@ -957,13 +932,674 @@ GROUP BY
 </p>
 
 
-3.
+3. ConflictingTranslatorMeetings
 
 ```sql
-Select CourseID, CourseName, (
-	SELECT SUM(p.Value) FROM Payments p
-	WHERE p.IsCancelled IS NOT Null AND p.OrderID = c.CourseID
-) zysk FROM Courses c
-
+CREATE VIEW [dbo].[ConflictingTranslatorMeetings] AS
+SELECT M1.ModuleID AS ModuleID1, 
+       M2.ModuleID AS ModuleID2, 
+       M1.Date AS MeetingDate, 
+       M1.TranslatorID AS PersonID, 
+       T.FirstName, 
+       T.LastName
+FROM Meetings M1
+JOIN Meetings M2 ON M1.TranslatorID = M2.TranslatorID
+JOIN Employees T ON M1.TranslatorID = T.EmployeeID
+WHERE M1.MeetingID <> M2.MeetingID 
+    AND M1.Date = M2.Date  
+    AND M1.MeetingID < M2.MeetingID 
 ```
 
+4. CourseProfitView
+
+```sql
+CREATE VIEW [dbo].[CourseProfitView] AS
+SELECT
+    c.CourseName,
+    ISNULL((
+        SELECT SUM(od.Value)
+        FROM Order_details od
+        WHERE od.OrderID IN (SELECT p.OrderID FROM Payments p)
+        AND od.OfferID = c.CourseID
+    ), 0) AS Profit
+FROM
+    Courses c;
+```
+
+5. EnrolledStudentsToCourses
+
+```sql
+CREATE VIEW [dbo].[EnrolledStudentsToCourses] AS
+SELECT 
+    S.StudentID,
+    S.FirstName,
+    S.LastName,
+    O.OfferID As CourseID,
+    O.Name AS CourseName,
+    O.Description AS CourseDescription,
+    O.Place AS CoursePlace
+FROM 
+    Students S
+INNER JOIN 
+    Orders Ord ON S.StudentID = Ord.StudentID
+INNER JOIN 
+    Order_details Od ON Ord.OrderID = Od.OrderID
+INNER JOIN 
+    Offers O ON Od.OfferID = O.OfferID
+WHERE 
+    O.Type = 'Courses';
+```
+
+6. EnrolledStudentsToGatherings
+
+```sql
+CREATE VIEW [dbo].[EnrolledStudentsToGatherings] AS
+SELECT 
+    S.StudentID,
+    S.FirstName,
+    S.LastName,
+    O.OfferID As GatheringID,
+    O.Name AS GatheringName,
+    O.Description AS GatheringDescription,
+    O.Place AS GatheringPlace
+FROM 
+    Students S
+INNER JOIN 
+    Orders Ord ON S.StudentID = Ord.StudentID
+INNER JOIN 
+    Order_details Od ON Ord.OrderID = Od.OrderID
+INNER JOIN 
+    Offers O ON Od.OfferID = O.OfferID
+WHERE 
+    O.Type = 'Gathering';
+```
+
+7. EnrolledStudentsToStudies
+
+```sql
+CREATE VIEW [dbo].[EnrolledStudentsToStudies] AS
+SELECT 
+    S.StudentID,
+    S.FirstName,
+    S.LastName,
+    O.OfferID As StudiesID,
+    O.Name AS OfferName,
+    O.Description AS OfferDescription,
+    O.Place AS OfferPlace
+FROM 
+    Students S
+INNER JOIN 
+    Orders Ord ON S.StudentID = Ord.StudentID
+INNER JOIN 
+    Order_details Od ON Ord.OrderID = Od.OrderID
+INNER JOIN 
+    Offers O ON Od.OfferID = O.OfferID
+WHERE 
+    O.Type = 'Studies';
+```
+
+8. EnrolledStudentsToWebinars
+
+```sql
+CREATE VIEW [dbo].[EnrolledStudentsToWebinars] AS
+SELECT 
+    S.StudentID,
+    S.FirstName,
+    S.LastName,
+    O.OfferID As WebinarID,
+    O.Name AS WebinarName,
+    O.Description AS WebinarDescription,
+    O.Place AS WebinarPlace
+FROM 
+    Students S
+INNER JOIN 
+    Orders Ord ON S.StudentID = Ord.StudentID
+INNER JOIN 
+    Order_details Od ON Ord.OrderID = Od.OrderID
+INNER JOIN 
+    Offers O ON Od.OfferID = O.OfferID
+WHERE 
+    O.Type = 'Webinar';
+```
+
+9. ListOfDebtors
+Widok przedstawia listę dłużników, czyli osób, które wzięły udział w wydarzeniu, za które jeszcze nie zapłaciły, dzięki temu wiadomo którym użytkownikom należy wysyłać maile z przypomnieniem o nieopłaconym zamówieniu. 
+
+```sql
+CREATE VIEW [dbo].[ListOfDebtors] AS
+WITH t AS (
+    SELECT 
+        o.OrderID,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM Payments as p WHERE o.OrderID = p.OrderID AND p.CancelDate IS NULL) THEN 1
+            ELSE 0
+        END AS OrderStatus
+    FROM 
+        Orders as o
+)
+
+SELECT s.StudentID,s.FirstName,s.LastName 
+FROM Gatherings as g
+INNER JOIN Offers as o ON g.GatheringID = o.OfferID
+INNER JOIN Order_details as d ON d.OfferID = o.OfferID
+INNER JOIN t ON t.OrderID = d.OrderID
+INNER JOIN Orders as r ON r.OrderID = d.OrderID
+INNER JOIN Students as s ON s.StudentID = r.StudentID
+WHERE t.OrderStatus = 0 AND g.Date < GETDATE()
+
+UNION
+
+SELECT s.StudentID,s.FirstName,s.LastName 
+FROM Courses as c
+INNER JOIN Offers as o ON c.CourseID = o.OfferID
+INNER JOIN Order_details as d ON d.OfferID = o.OfferID
+INNER JOIN t ON t.OrderID = d.OrderID
+INNER JOIN Orders as r ON r.OrderID = d.OrderID
+INNER JOIN Students as s ON s.StudentID = r.StudentID
+WHERE t.OrderStatus = 0 AND c.StartDate < GETDATE()
+
+UNION
+
+SELECT s.StudentID,s.FirstName,s.LastName 
+FROM Webinar as w
+INNER JOIN Offers as o ON w.WebinarID = o.OfferID
+INNER JOIN Order_details as d ON d.OfferID = o.OfferID
+INNER JOIN t ON t.OrderID = d.OrderID
+INNER JOIN Orders as r ON r.OrderID = d.OrderID
+INNER JOIN Students as s ON s.StudentID = r.StudentID
+WHERE t.OrderStatus = 0 AND w.Date < GETDATE()
+
+UNION
+
+SELECT s.StudentID,s.FirstName,s.LastName
+FROM Studies as sd
+INNER JOIN Offers as o ON sd.StudiesID = o.OfferID
+INNER JOIN Semesters as se ON se.StudiesID=sd.StudiesID
+INNER JOIN Gatherings as g ON g.SemesterID = se.SemesterID
+INNER JOIN Order_details as d ON d.OfferID = o.OfferID
+INNER JOIN t ON t.OrderID = d.OrderID
+INNER JOIN Orders as r ON r.OrderID = d.OrderID
+INNER JOIN Students as s ON s.StudentID = r.StudentID
+GROUP BY s.StudentID,s.FirstName,s.LastName, t.OrderStatus
+HAVING min(g.Date) < GETDATE() AND t.OrderStatus = 0;
+```
+
+10. OrdersPaymentsView
+
+```sql
+CREATE VIEW [dbo].[OrdersPaymentsView]
+AS
+SELECT 
+    Ord.OrderID, 
+    SUM(ROUND(OD.Value*(1-OD.Discount),2)) AS Value, 
+    P.Value AS Paid, 
+    ROUND(SUM(ROUND(ROUND(OD.Value*(1-OD.Discount),2),2))-P.Value,2) AS ToPay, 
+    P.CancelDate 
+FROM 
+    Orders AS Ord
+INNER JOIN 
+    Order_details AS OD ON Ord.OrderID = OD.OrderID
+INNER JOIN 
+    Payments AS P ON Ord.OrderID = P.OrderID
+GROUP BY 
+    Ord.OrderID, P.CancelDate, P.Value;
+```
+
+11. ProfitInfo - error z nazwą
+
+```sql
+```
+
+12. StudentPracticesCompletionStatus
+
+```sql
+CREATE VIEW [dbo].[StudentPracticesCompletionStatus] AS
+SELECT 
+    out_t.StudentID, 
+    out_t.FirstName, 
+    out_t.LastName, 
+    COUNT(out_t.PractiseID) AS CompletedPracticesCount,
+    (SELECT COUNT(in_t.PractiseID) 
+     FROM StudentPracticesSummaryByPractiseID as in_t 
+     WHERE in_t.StudentID = out_t.StudentID 
+     GROUP BY StudentID) AS TotalPracticesCount,
+    CASE 
+        WHEN COUNT(out_t.PractiseID) = (SELECT COUNT(in_t.PractiseID) 
+			FROM StudentPracticesSummaryByPractiseID as in_t 
+			WHERE in_t.StudentID = out_t.StudentID 
+			GROUP BY StudentID) THEN 'Pass'
+        ELSE 'Fail'
+    END AS Result
+FROM 
+    StudentPracticesSummaryByPractiseID as out_t
+WHERE 
+    CompletedAllPractices = 'True'
+GROUP BY 
+    out_t.StudentID, out_t.FirstName, out_t.LastName;
+```
+
+13. StudentPracticesSummaryByPractiseID
+
+```sql
+CREATE VIEW [dbo].[StudentPracticesSummaryByPractiseID] AS
+SELECT 
+    PA.StudentID,
+    S.FirstName,
+    S.LastName,
+	PA.PractiseID,
+    CASE WHEN SUM(CAST(PA.Attendance AS INT)) = COUNT(PA.Attendance)
+         THEN 'True'
+         ELSE 'False'
+    END AS CompletedAllPractices
+FROM 
+    PractiseAttendance PA
+JOIN 
+    Students S ON PA.StudentID = S.StudentID
+GROUP BY 
+    PA.StudentID, PA.PractiseID, S.FirstName, S.LastName;
+```
+
+14. StudentsEnrolmentInfo - error z nazwą
+
+```sql
+```
+
+15. StudiesProfitView
+
+```sql
+CREATE VIEW [dbo].[StudiesProfitView] AS
+SELECT
+    s.Name,
+    ISNULL((
+        SELECT SUM(od.Value)
+        FROM Order_details od
+        WHERE od.OrderID IN (SELECT p.OrderID FROM Payments p)
+        AND od.OfferID = s.StudiesID
+    ), 0) AS Profit
+FROM
+    Studies s;
+```
+
+16. WebinarProfitView
+
+```sql
+CREATE VIEW [dbo].[WebinarProfitView] AS
+SELECT
+    w.WebinarName,
+    ISNULL((
+        SELECT SUM(od.Value)
+        FROM Order_details od
+        WHERE od.OrderID IN (SELECT p.OrderID FROM Payments p)
+        AND od.OfferID = w.WebinarID
+    ), 0) AS Profit
+FROM
+    Webinar w;
+```
+
+**Procedury:**
+
+1. AddLessonAttendance
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danej lekcji, przed wykonaniem polecenia dodawania sprawdza także czy lekcja o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[AddLessonAttendance]
+    @LessonID INT,
+    @StudentID INT,
+    @IsPresent BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM Lessons WHERE LessonID = @LessonID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    BEGIN
+        INSERT INTO LessonsAttendance(LessonID, StudentID, Attendance)
+        VALUES (@LessonID, @StudentID, @IsPresent);
+    END
+END;
+```
+
+2. AddMeetingAttendance
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danym spotkaniu, przed wykonaniem polecenia dodawania sprawdza także czy spotkanie o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[AddMeetingAttendance]
+    @MeetingID INT,
+    @StudentID INT,
+    @IsPresent BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM Meetings WHERE MeetingID = @MeetingID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    BEGIN
+        INSERT INTO CourseAttendance (MeetingID, StudentID, Attendance)
+        VALUES (@MeetingID, @StudentID, @IsPresent);
+    END
+END;
+```
+
+3. AddPractiseAttendance
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danych praktykach, przed wykonaniem polecenia dodawania sprawdza także czy praktyki o podanym ID istnieją oraz czy uczeń o podanym ID istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[AddPractiseAttendance]
+    @PractiseID INT,
+    @StudentID INT,
+    @IsPresent BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM Practices WHERE PractiseID = @PractiseID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    BEGIN
+        INSERT INTO PractiseAttendance(PractiseID, StudentID, Attendance)
+        VALUES (@PractiseID, @StudentID, @IsPresent);
+    END
+END;
+```
+
+4. AddNewOrder
+Procedura ta umożliwa dodatnie do tabeli Orders nowego zamówienia dla studenta o podanym ID, jako datę zamówienia wstawia aktualną datę.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewOrder]
+    @StudentID INT
+AS
+BEGIN
+    INSERT INTO Orders (StudentID, OrderDate)
+    VALUES (@StudentID, GETDATE());
+
+END;
+```
+
+5. AddOrderDetails
+Procedura ta pozwala na dodanie szczegółów do konkretnego zamówienia, przyjmuje argumenty takie jak: numer zamówienia, nummer oferty zamówionego produktu, koszt tego produktu i ewentualną zniżkę, przed dodaniem do tabeli upewnia się czy suma wartości pozostałych kupionych produktów oraz tego wstawianego nie przekracza przypadkiem kwoty która została zapłacona za zamówienia.
+
+```sql
+CREATE PROCEDURE [dbo].[AddOrderDetails]
+    @OrderID INT,
+    @OfferID INT,
+    @Value MONEY,
+    @Discount FLOAT
+AS
+BEGIN
+    DECLARE @OrderTotalMoney MONEY;
+    DECLARE @PaymentTotalMoney MONEY;
+
+    IF EXISTS (SELECT 1 FROM Orders WHERE OrderID = @OrderID)
+    BEGIN
+        
+        SELECT @OrderTotalMoney = SUM(Value * (1 - Discount)) 
+        FROM Order_details 
+        WHERE OrderID = @OrderID;
+
+        SET @OrderTotalMoney = @OrderTotalMoney + (@Value * (1 - @Discount));
+
+        SELECT @PaymentTotalMoney = Value 
+        FROM Payments 
+        WHERE OrderID = @OrderID;
+
+        IF @OrderTotalMoney <= @PaymentTotalMoney
+        BEGIN
+            INSERT INTO Order_details (OrderID, OfferID, Value, Discount)
+            VALUES (@OrderID, @OfferID, @Value, @Discount);
+        END
+    END
+END;
+```
+
+6. AddPayment
+Procedura ta pozwala na dodanie nowego rekordu w tabeli Payments, dla konkretnego zamówieniam daty oraz kwoty oraz dla ewentualnej daty odroczenia płatności. Procedura sprawdza także czy podane ID zamówienia istnieje w tabeli z zamówieniami.
+
+```sql
+CREATE PROCEDURE [dbo].[AddPayment]
+    @OrderID INT,
+    @Date DATETIME,
+    @Value MONEY,
+    @CancelDate DATETIME
+AS
+BEGIN
+    
+    IF EXISTS (SELECT 1 FROM Orders WHERE OrderID = @OrderID)
+    BEGIN
+   
+        INSERT INTO Payments (OrderID, Date, Value, CancelDate)
+        VALUES (@OrderID, @Date, @Value, @CancelDate);
+
+    END
+END;
+```
+
+7. GetOrdersPaymentsByStudentID
+
+```sql
+CREATE PROCEDURE [dbo].[GetOrdersPaymentsByStudentID]
+    @StudentID INT
+AS
+BEGIN
+    SELECT 
+        Ord.OrderID, 
+        SUM(ROUND(OD.Value*(1-OD.Discount),2)) AS Value, 
+        P.Value AS Paid, 
+        ROUND(SUM(ROUND(ROUND(OD.Value*(1-OD.Discount),2),2))-P.Value,2) AS ToPay, 
+        P.CancelDate 
+    FROM 
+        Orders AS Ord
+    INNER JOIN 
+        Order_details AS OD ON Ord.OrderID = OD.OrderID
+    INNER JOIN 
+        Payments AS P ON Ord.OrderID = P.OrderID
+    WHERE 
+        Ord.StudentID = @StudentID
+    GROUP BY 
+        Ord.OrderID, P.CancelDate, P.Value;
+END;
+```
+
+8. GetStudentPracticeCompletionStatus
+
+```sql
+CREATE PROCEDURE [dbo].[GetStudentPracticeCompletionStatus]
+    @StudentID INT
+AS
+BEGIN
+    SELECT *
+    FROM StudentPracticesCompletionStatus
+    WHERE StudentID = @StudentID;
+END;
+```
+
+9. GetStudentPracticeSummary
+
+```sql
+CREATE PROCEDURE [dbo].[GetStudentPracticeSummary]
+    @StudentID INT
+AS
+BEGIN
+    SELECT 
+        PA.StudentID,
+        S.FirstName,
+        S.LastName,
+        PA.PractiseID,
+        CASE WHEN SUM(CAST(PA.Attendance AS INT)) = COUNT(PA.Attendance)
+             THEN 'True'
+             ELSE 'False'
+        END AS CompletedAllPractices
+    FROM 
+        PractiseAttendance PA
+    JOIN 
+        Students S ON PA.StudentID = S.StudentID
+    WHERE
+        PA.StudentID = @StudentID
+    GROUP BY 
+        PA.StudentID, PA.PractiseID, S.FirstName, S.LastName;
+END;
+```
+
+10. MeetingsByTeacher
+
+```sql
+CREATE Procedure [dbo].[MeetingsByTeacher]
+	@TeacherID INT
+AS 
+Begin
+select * from Meetings as m
+where m.TeacherID=@TeacherID
+End
+```
+
+11. OrdersByStudentID
+
+```sql
+CREATE PROCEDURE [dbo].[OrdersByStudentID]
+    @StudentID int
+AS
+BEGIN
+    SELECT O.OfferID, O.Name, O.Type, O.Place, OD.Value*(1-OD.Discount) AS Value, P.Value AS Paid, OD.Value-P.Value AS ToPay, P.CancelDate FROM Orders AS Ord
+	INNER JOIN Order_details AS OD ON Ord.OrderID = OD.OrderID
+	INNER JOIN Offers AS O on O.OfferID = OD.OfferID
+	INNER JOIN Payments AS P on Ord.OrderID =P.PaymentID
+	WHERE Ord.StudentID = @StudentID
+END;
+```
+
+12. UpdateLessonAttendance
+Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danej lekcji, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[UpdateLessonAttendance]
+    @LessonID INT,
+    @StudentID INT,
+    @NewAttendance BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM LessonsAttendance WHERE LessonID = @LessonID AND StudentID = @StudentID)
+    BEGIN
+        UPDATE LessonsAttendance
+        SET Attendance = @NewAttendance
+        WHERE LessonID = @LessonID AND StudentID = @StudentID;
+    END
+END;
+```
+
+13. UpdateMeetingAttendance
+Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danym spotkaniu, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[UpdateMeetingAttendance]
+    @MeetingID INT,
+    @StudentID INT,
+    @NewAttendance BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM CourseAttendance WHERE MeetingID = @MeetingID AND StudentID = @StudentID)
+    BEGIN
+        UPDATE CourseAttendance
+        SET Attendance = @NewAttendance
+        WHERE MeetingID = @MeetingID AND StudentID = @StudentID;
+    END
+END;
+```
+
+14. UpdatePractiseAttendance
+Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danych praktykach, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
+
+```sql
+CREATE PROCEDURE [dbo].[UpdatePractiseAttendance]
+    @PractiseID INT,
+    @StudentID INT,
+    @NewAttendance BIT
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM PractiseAttendance WHERE PractiseID = @PractiseID AND StudentID = @StudentID)
+    BEGIN
+        UPDATE PractiseAttendance
+        SET Attendance = @NewAttendance
+        WHERE PractiseID = @PractiseID AND StudentID = @StudentID;
+    END
+END;
+```
+
+**Funkcje:**
+
+1. CourseEnrolmentsNumber 
+Funkcja ta podaje ilość zapisanych użytkowników na podany kurs.
+
+```sql
+Create FUNCTION [dbo].[CourseEnrolmentsNumber](@CourseID INT)
+RETURNS INT
+AS
+BEGIN
+
+    DECLARE @Enrolments INT;
+    
+	select @Enrolments = count(o.StudentID) from Orders as o
+	inner join Payments as p on p.OrderID=o.OrderID
+	inner join Order_details as d on d.OrderID=p.OrderID
+	inner join Offers as f on f.OfferID=d.OfferID
+	inner join Courses as c on c.CourseID=f.OfferID
+	group by c.CourseID,p.CancelDate
+	having p.CancelDate is Null and c.CourseID=@CourseID
+
+    RETURN @Enrolments;
+END;
+```
+
+2. IsStudyEnrollmentPossible
+Funkcja ta przyjmuje jako argument ID oferty jakiegoś kierunku studiów a następnie zwraca wartość True/False w zależnosći czy na danym studium jest jeszcze miejsce do zapisania się.
+
+```sql
+CREATE FUNCTION [dbo].[IsStudyEnrollmentPossible] (@StudyID INT)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @Capacity INT;
+
+    SELECT @Capacity = s.StudentCapacity 
+    FROM Studies as s
+    WHERE s.StudiesID = @StudyID;
+
+    IF (dbo.StudyEnrollmentsNumber(@StudyID) < @Capacity) 
+        RETURN 1; 
+    RETURN 0;  
+END;
+```
+
+3. StudyEnrollmentsNumber
+Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podane studium.
+
+```sql
+CREATE FUNCTION [dbo].[StudyEnrollmentsNumber] (@StudyID INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @Enrollments INT;
+
+    select @Enrollments = count(o.StudentID) from Orders as o
+	inner join Payments as p on p.OrderID=o.OrderID
+	inner join Order_details as d on d.OrderID=p.OrderID
+	inner join Offers as f on f.OfferID=d.OfferID
+	inner join Studies as s on s.StudiesID=f.OfferID
+	group by p.CancelDate, s.StudiesID
+	having p.CancelDate is Null and s.StudiesID=@StudyID
+
+    RETURN @Enrollments;
+END;
+```
+
+4. WebinarEnrolmentsNumber
+Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podany webinar.
+
+```sql
+CREATE FUNCTION [dbo].[WebinarEnrolmentsNumber](@WebinarID INT)
+RETURNS INT
+AS
+BEGIN
+
+    DECLARE @Enrolments INT;
+    
+	select @Enrolments = count(o.StudentID) from Orders as o
+	inner join Payments as p on p.OrderID=o.OrderID
+	inner join Order_details as d on d.OrderID=p.OrderID
+	inner join Offers as f on f.OfferID=d.OfferID
+	inner join Webinar as w on w.WebinarID=f.OfferID
+	group by w.WebinarID,p.CancelDate
+	having p.CancelDate is Null and w.WebinarID=@WebinarID
+
+    RETURN @Enrolments;
+END
+```
