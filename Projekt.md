@@ -57,6 +57,7 @@
 **Tabele:**
 
 1. Offers:
+
 Tabela zawiera informacje o wszystkich wydarzeniach jakie są oferowane. Zawiera idetyfikator wydarzenia (OfferID), nazwe, opis oraz typ (Name, Description, Type), typ określa czy jest to webinar, kurs, studia czy pojedyńcza lekcja. Dodatkowo miejsce wydarzenia oraz jego całkowity koszt (Place, Price).
 
 <br>
@@ -91,6 +92,7 @@ ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Type_Values]
 
 
 2. Webinar:
+
 Tabela zawiera informacje o webianrach, zawiera klucz główny (WebinarID), nazwę oraz datę rozpoczęcia (WebinarName, Date), inforamcje o osbie, która to prowadzi (TeacherID) i link do webinaru (MeetingLink).
 
 ```sql
@@ -122,30 +124,31 @@ ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [CHK_Webinar_WebinarName_Length]
 ```
 
 3. Studies:
-Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów na danym studium (TeacherID, StudentCapacity).
+
+Tabela zawiera informacje o studiach, zawiera klucz główny (StudiesID), kierunku studiów oraz opłacie za nie (Name, Fee), koorynatorze, maksymalnej ilości studentów na danym studium (MEnagerID, StudentCapacity).
 
 ```sql
 CREATE TABLE [dbo].[Studies](
 	[StudiesID] [int] NOT NULL,
 	[Name] [nchar](50) NOT NULL,
 	[Fee] [money] NOT NULL,
-	[TeacherID] [int] NOT NULL,
+	[MenagerID] [int] NOT NULL,
 	[StudentCapacity] [int] NOT NULL,
  CONSTRAINT [PK_Studies_1] PRIMARY KEY CLUSTERED 
 (
 	[StudiesID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+) ON [PRIMARY]S
+
+ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [FK_Studies_Employees] FOREIGN KEY([MenagerID])
+REFERENCES [dbo].[Employees] ([EmployeeID])
+
+ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [FK_Studies_Employees]
 
 ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [FK_Studies_Offers] FOREIGN KEY([StudiesID])
 REFERENCES [dbo].[Offers] ([OfferID])
 
 ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [FK_Studies_Offers]
-
-ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [FK_Studies_TeachingStaff] FOREIGN KEY([TeacherID])
-REFERENCES [dbo].[TeachingStaff] ([TeacherID])
-
-ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [FK_Studies_TeachingStaff]
 
 ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_Fee_NonNegative] CHECK  (([Fee]>=(0)))
 
@@ -162,6 +165,7 @@ ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Studies_Name_Length]
 ```
 
 4. Courses:
+
 Tabela zawiera spis wszystkich kursów z kluczem głównym (CourseID), posiada informację o temacie kursu oraz jego nazwie (TopicID, CourseName), a także dacie rozpoczęcia, ilości modułów z których kurs się składa i dacie zapłaty (StartDate, ModulesNo, PaymentDay), całkowitej kwocie jaką należy za kurs zapłacić, kwocie zaliczki oraz zniżce (FullPrice, Deposit, Discount).
 
 ```sql
@@ -217,6 +221,7 @@ ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_PaymentDay_BeforeStart]
 ```
 
 5. Gatherings:
+
 Tabela zawiera informacje o zjazdach, posaida klucz główny (GatheringID) i semestr, w ramach którego odbywa się dany zjazd oraz datę w której zjazd się odbywa (SemestrID, Date).
 
 ```sql
@@ -242,6 +247,7 @@ ALTER TABLE [dbo].[Gatherings] CHECK CONSTRAINT [FK_Gatherings_Semesters]
 ```
 
 6. Semesters:
+
 W tabeli znajdują się informacje o wszystkich semestrach na wszystkich kierunkach studiów, klucz główny to (SemesterID), zawiera też informacje o kierunku studiów na którym semestr się znajduje, numerze semestru(StudiesID, Semester_no).
 
 ```sql
@@ -266,6 +272,7 @@ ALTER TABLE [dbo].[Semesters] CHECK CONSTRAINT [CHK_Semester_no_Positive]
 ```
 
 7. Practices:
+
 Tabela zawiera dane o praktykach, posiada klucz główny (PractiseID), semestrze na którym się odbywają i pracowniku, który je prowadzi (SemesterID, EmployeeID), posiada informacje o miejscu, w kótrym praktyki się odbywają, dacie rozpoczęcia, ilości spotkań oraz potrzebnym wyposażeniu (Address, StartDate, MeetingsCount, RequiredEquipment).
 
 ```sql
@@ -299,6 +306,7 @@ ALTER TABLE [dbo].[Practices] CHECK CONSTRAINT [CHK_MeetingsCount_Positive]
 ```
 
 8. PractiseAttendance:
+
 Tabela posiada informacje o obecności studentów na praktykach, posiada klucz główny (PractiseAttendanceID), dla każdego studenta przypisuje czy był obecny na danych praktykach, na które jest zapisany (PractiseID, StudentID, Attendance).
 
 ```sql
@@ -330,6 +338,7 @@ ALTER TABLE [dbo].[PractiseAttendance] CHECK CONSTRAINT [FK_PractiseAttendance_S
 ```
 
 9. Subjects:
+
 Tabela zawiera informacje o przedmiotach występujących w semestrach z kluczem głównym (SubjectID), przypisuje przemiot do określonego semestru, posiada nazwę przedmiotu oraz jego opis (SemesterID, SubjectName, Description).
 
 ```sql
@@ -355,14 +364,15 @@ ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [CHK_Subjects_SubjectName_Length]
 ```
 
 10. Lessons:
-Tabela zawiera informacje o lekcjach zarówno tych na studiach, oraz tych możliwych do kupienia pojedynczo, posida klucz główny (LessonID), przedmiot i zjazd do którego jest przypisana dana lekcja, oraz nauczyciela który ją prowadzi (SubjectID, GatheringID, Teacher) zawiera temat, datę, typ, język prowadzenia, cenę i czas trwania (TopicID, Date, Type, Language, Price, Duration).
+
+Tabela zawiera informacje o lekcjach zarówno tych na studiach, oraz tych możliwych do kupienia pojedynczo, posida klucz główny (LessonID), przedmiot i zjazd do którego jest przypisana dana lekcja, oraz nauczyciela który ją prowadzi (SubjectID, GatheringID, TeacherID) zawiera temat, datę, typ, język prowadzenia, cenę i czas trwania (TopicID, Date, Type, Language, Price, Duration).
 
 ```sql
 CREATE TABLE [dbo].[Lessons](
 	[LessonID] [int] NOT NULL,
 	[SubjectID] [int] NOT NULL,
 	[GatheringID] [int] NOT NULL,
-	[Teacher] [int] NULL,
+	[TeacherID] [int] NOT NULL,
 	[TopicID] [int] NOT NULL,
 	[Date] [datetime] NOT NULL,
 	[Type] [nchar](10) NOT NULL,
@@ -385,6 +395,11 @@ REFERENCES [dbo].[Subjects] ([SubjectID])
 
 ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [FK_Lessons_Subjects]
 
+ALTER TABLE [dbo].[Lessons]  WITH CHECK ADD  CONSTRAINT [FK_Lessons_TeachingStaff] FOREIGN KEY([TeacherID])
+REFERENCES [dbo].[TeachingStaff] ([TeacherID])
+
+ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [FK_Lessons_TeachingStaff]
+
 ALTER TABLE [dbo].[Lessons]  WITH CHECK ADD  CONSTRAINT [FK_Lessons_Topics] FOREIGN KEY([TopicID])
 REFERENCES [dbo].[Topics] ([TopicID])
 
@@ -396,6 +411,7 @@ ALTER TABLE [dbo].[Lessons] CHECK CONSTRAINT [CHK_Lessons_Type]
 ```
 
 11. LessonsAttendance:
+
 Tabela posiada informacje o obecności studentów na lekcjach, posiada klucz główny (LessonsAttendenseID), dla każdego studenta przypisuje czy był obecny na danej lekcji, na którą jest zapisany (LessonID, StudentID, Attendance).
 
 ```sql
@@ -427,6 +443,7 @@ ALTER TABLE [dbo].[LessonsAttendance] CHECK CONSTRAINT [FK_LessonsAttendance_Stu
 ```
 
 12. Topics:
+
 Tabela posiada dane o tematach kursów, bądź lekcji, posiada klucz główny (TopicID) oraz nazwę tematu i jego opis (TopicName, Description).
 
 ```sql
@@ -446,6 +463,7 @@ ALTER TABLE [dbo].[Topics] CHECK CONSTRAINT [CHK_Topics_TopicName_Length]
 ```
 
 13. Modules:
+
 Tabela zawiera wszystkie moduły, znajdujące się kursach, posiada klucz główny (ModuleID), informacje o kursie, do którego moduł należy oraz jego tytule i typie (CourseID, Title, Type), a także dacie zakończenia i rozpoczęcia oraz klasie, w której się odbywa (EndDate, StartDate, Classroom).
 
 ```sql
@@ -482,6 +500,7 @@ ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Type_Values]
 ```
 
 14. Meetings:
+
 Tabela zawiera dane o spotkaniach odbywających się w ramach konkretnego modułu, posiada klucz główny (MeetingID), przypisuje spotkanie do modułu, zawiera datę odbycia się i język prowadzenia oraz typ (ModuleID, Date, LanguageID, Type), miejsce odbywania się modułu, link do ewentualnego spotlania online, nauczyciela prowadzącego i tłumacza (Place, Link, TeacherID, TranslatorID).
 
 ```sql
@@ -522,6 +541,7 @@ ALTER TABLE [dbo].[Meetings] CHECK CONSTRAINT [CHK_Meetings_Type_Values]
 ```
 
 15. CourseAttendace:
+
 Tabela posiada informacje o obecności studentów na spotkaniach w donym module kursu, posiada klucz główny (AttendanceID), dla każdego studenta przypisuje czy był obecny na danym spotkaniu, na które jest zapisany (MeetingID, StudentID, Attendance).
 
 ```sql
@@ -548,6 +568,7 @@ ALTER TABLE [dbo].[CourseAttendance] CHECK CONSTRAINT [FK_Attendance_Students]
 ```
 
 16. Orders:
+
 Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia (StudentID, OrderDate). 
 ```sql
 CREATE TABLE [dbo].[Orders](
@@ -567,7 +588,8 @@ ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Students]
 ```
 
 17. Order_Details:
-Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, OfferID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
+
+Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
 
 ```sql
 CREATE TABLE [dbo].[Order_details](
@@ -602,6 +624,7 @@ ALTER TABLE [dbo].[Order_details] CHECK CONSTRAINT [CHK_OrderDetails_Value_NonNe
 ```
 
 18. Payments:
+
 Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łączy płatność z określonym zamówieniem(OrderID), zawiera datę, wartość oraz status płatności (Date, Value, IsCancelled), status jest typu bit.
 
 ```sql
@@ -628,6 +651,7 @@ ALTER TABLE [dbo].[Payments] CHECK CONSTRAINT [CHK_Payments_Value_Positive]
 ```
 
 19. Users:
+
 Tabela zawiera wszystkich użytkowników z całej bazy danych, posiada klucz główny (UserID), do tego dla każdego użytkownika przypisuje login i hasło (Login, Password).
 
 ```sql
@@ -660,6 +684,7 @@ ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Password_Length]
 
 
 20. Students:
+
 Tabela posiada wszystkch zarejestrowanych studentów, zawiera klucz główny (StudentID). Przechowuje informacje o studentach takie jak: imię, nazwisko, datę urodzenia (FirstName, LastName, BirthDate), z jakiego kraju pochodzi i dane adresowe (CountryID, Country, Region, City, ZipCode, Street), numer prywatnego i domowego telefonu (Phone, HomeNumber).
 
 ```sql
@@ -697,6 +722,7 @@ ALTER TABLE [dbo].[Students] CHECK CONSTRAINT [CHK_Students_BirthDate]
 ```
 
 21. Employees:
+
 Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) oraz inforamcaje o pracowniku takie jak: pozycję, imię, nazwisko (PositionID, FirstName, LastName), datę zatrudnienia, pensje, email, numer telefonu oraz miasto (HireDate, Salary, Email, Phone, City), dodatkowo informację czy dany pracownik wciąż dla nas pracuje(IsActive).
 
 ```sql
@@ -742,6 +768,7 @@ ALTER TABLE [dbo].[Employees] CHECK CONSTRAINT [CHK_Employees_Salary]
 ```
 
 22. TeachingStaff:
+
 Tabela zawiera inforamacje o kadrze nauczycielskiej, posiada klucz główny (TeacherID) oraz informajce o tym w jakim języku prowadzi zajęcia i jego stopień naukowy (LanguageID, Degree).
 
 ```sql
@@ -767,6 +794,7 @@ ALTER TABLE [dbo].[TeachingStaff] CHECK CONSTRAINT [CK_TeachingStaff_Degree]
 
 
 23. Translators:
+
 Tabela zawiera inforamacje o tłumaczach, posiada klucz główny (TranslatorID) oraz informacje o języku z którego tłumaczy (LanguageID).
 
 ```sql
@@ -792,6 +820,7 @@ ALTER TABLE [dbo].[Translators] CHECK CONSTRAINT [FK_Translators_Languages]
 
 
 24. Administrators:
+
 Tabela zawiera inforamacja o admnistarotach zawiera klucz głowny (AdminID) oraz data otrzymania uprawnień (Add_date).
 
 ```sql
@@ -813,6 +842,7 @@ ALTER TABLE [dbo].[Administrators] CHECK CONSTRAINT [FK_Administrators_Employees
 
 
 25. Countries:
+
 Tabela zawiera informacje o krajach, posiada klucz główny (CountryID), nazwę kraju i język (CountryName, LanguageID).
 
 ```sql
@@ -837,6 +867,7 @@ ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [CHK_Countries_CountryName_Length
 ```
 
 26. Languages:
+
 Tabela zawiera informacje o językach, posiada klucz główny (LanguageID) oraz nazwę języka (LanguageName).
 
 ```sql
@@ -855,6 +886,7 @@ ALTER TABLE [dbo].[Languages] CHECK CONSTRAINT [CHK_Languages_LanguageName_Lengt
 ```
 
 27. Position
+
 Tabela zawiera informacje o stanowiskach, posiada klucz główny (PositionID) oraz nazwę stanowski w postaci znakowej (PositionName).
 
 ```sql
@@ -874,6 +906,7 @@ ALTER TABLE [dbo].[Positions] CHECK CONSTRAINT [CHK_Positions_PositionName]
 **Widoki:**
 
 1. AttendanceMeetingView
+
 Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu podaje sumę obecności, łączną liczbę spotkań oraz procentową obecność. Umożliwia analizę uczestnictwa studentów w ramach konkretnych kursów i modułów.
 
 ```sql
@@ -903,6 +936,7 @@ GROUP BY
 
 
 2. CoursesPass
+
 Widok ten identyfikuje, czy studenci zaliczyli kurs na podstawie procentowej obecności w poszczególnych modułach. Dla każdego kursu podaje procentową obecność, łączną liczbę modułów oraz status "Pass" lub "Fail" w zależności od spełnienia warunku procentowej obecności (80% lub więcej). Umożliwia monitorowanie postępów studentów i ocenę ich osiągnięć w kontekście kursów.
 
 ```sql
@@ -934,6 +968,8 @@ GROUP BY
 
 3. ConflictingTranslatorMeetings
 
+Widok przedstawia tłumaczy, którzy przypisani są do różnych wydarzeń odbywających sie w tym samym czasie.
+
 ```sql
 CREATE VIEW [dbo].[ConflictingTranslatorMeetings] AS
 SELECT M1.ModuleID AS ModuleID1, 
@@ -949,8 +985,13 @@ WHERE M1.MeetingID <> M2.MeetingID
     AND M1.Date = M2.Date  
     AND M1.MeetingID < M2.MeetingID 
 ```
+<p align="center">
+  <img src="views/ConflictingTranslatorMeetings.png" alt="ConflictingTranslatorMeetings">
+</p>
 
 4. CourseProfitView
+
+Widok przedstawia dochód z poszczególnych kursów.
 
 ```sql
 CREATE VIEW [dbo].[CourseProfitView] AS
@@ -966,7 +1007,13 @@ FROM
     Courses c;
 ```
 
+<p align="center">
+  <img src="views/CourseProfitView.png" alt="ConflictingTranslatorMeetings">
+</p>
+
 5. EnrolledStudentsToCourses
+
+Widok przedstawia informacje dotyczące studentów zapisanych na kursy.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToCourses] AS
@@ -989,8 +1036,13 @@ INNER JOIN
 WHERE 
     O.Type = 'Courses';
 ```
+<p align="center">
+  <img src="views/EnrolledStudentsToCourses.png" alt="EnrolledStudentsToCourses">
+</p>
 
 6. EnrolledStudentsToGatherings
+
+Widok przedstawia informacje dotyczące studentów zapisanych na zjazdy.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToGatherings] AS
@@ -1013,8 +1065,13 @@ INNER JOIN
 WHERE 
     O.Type = 'Gathering';
 ```
+<p align="center">
+  <img src="views/EnrolledStudentsToGatherings.png" alt="EnrolledStudentsToGatherings">
+</p>
 
 7. EnrolledStudentsToStudies
+
+Widok przedstawia informacje dotyczące studentów zapisanych na studia.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToStudies] AS
@@ -1037,8 +1094,13 @@ INNER JOIN
 WHERE 
     O.Type = 'Studies';
 ```
+<p align="center">
+  <img src="views/EnrolledStudentsToStudies.png" alt="EnrolledStudentsToStudies">
+</p>
 
 8. EnrolledStudentsToWebinars
+
+Widok przedstawia informacje dotyczące studentów zapisanych na webinary.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToWebinars] AS
@@ -1062,7 +1124,13 @@ WHERE
     O.Type = 'Webinar';
 ```
 
+<p align="center">
+  <img src="views/EnrolledStudentsToWebinars.png" alt="EnrolledStudentsToWebinars">
+</p
+
+
 9. ListOfDebtors
+
 Widok przedstawia listę dłużników, czyli osób, które wzięły udział w wydarzeniu, za które jeszcze nie zapłaciły, dzięki temu wiadomo którym użytkownikom należy wysyłać maile z przypomnieniem o nieopłaconym zamówieniu. 
 
 ```sql
@@ -1124,7 +1192,40 @@ GROUP BY s.StudentID,s.FirstName,s.LastName, t.OrderStatus
 HAVING min(g.Date) < GETDATE() AND t.OrderStatus = 0;
 ```
 
+<p align="center">
+  <img src="views/ListOfDebtors.png" alt="ListOfDebtors">
+</p
+
+
 10. OrdersPaymentsView
+
+Widok przedstawia inforamacje dotyczące płatności dla każdego zamówienia.
+
+```sql
+CREATE VIEW [dbo].[OrdersPaymentsView]
+AS
+SELECT 
+    Ord.OrderID, 
+    SUM(ROUND(OD.Value*(1-OD.Discount),2)) AS Value, 
+    P.Value AS Paid, 
+    ROUND(SUM(ROUND(ROUND(OD.Value*(1-OD.Discount),2),2))-P.Value,2) AS ToPay, 
+    P.CancelDate 
+FROM 
+    Orders AS Ord
+INNER JOIN 
+    Order_details AS OD ON Ord.OrderID = OD.OrderID
+INNER JOIN 
+    Payments AS P ON Ord.OrderID = P.OrderID
+GROUP BY 
+    Ord.OrderID, P.CancelDate, P.Value;
+```
+<p align="center">
+  <img src="views/OrdersPaymentsView.png" alt="OrdersPaymentsView">
+</p
+
+11. ProfitInfo
+
+Widok przedstawia liczbę wydarzń na jakie dokonano zapisu w zamówieniu oraz łączny dochód dla każdego z zamówień.
 
 ```sql
 CREATE VIEW [dbo].[OrdersPaymentsView]
@@ -1145,12 +1246,13 @@ GROUP BY
     Ord.OrderID, P.CancelDate, P.Value;
 ```
 
-11. ProfitInfo - error z nazwą
-
-```sql
-```
+<p align="center">
+  <img src="views/ProfitInfo.png" alt="ProfitInfo">
+</p
 
 12. StudentPracticesCompletionStatus
+
+Widok przedstawia status inforamacje dotyczące ukończenia praktyk.
 
 ```sql
 CREATE VIEW [dbo].[StudentPracticesCompletionStatus] AS
@@ -1177,8 +1279,13 @@ WHERE
 GROUP BY 
     out_t.StudentID, out_t.FirstName, out_t.LastName;
 ```
+<p align="center">
+  <img src="views/StudentPracticesCompletionStatus.png" alt="StudentPracticesCompletionStatus">
+</p
 
 13. StudentPracticesSummaryByPractiseID
+
+Widok przedstawia całą listę obecności na praktykch dla wszystkich studentów.
 
 ```sql
 CREATE VIEW [dbo].[StudentPracticesSummaryByPractiseID] AS
@@ -1199,12 +1306,43 @@ GROUP BY
     PA.StudentID, PA.PractiseID, S.FirstName, S.LastName;
 ```
 
-14. StudentsEnrolmentInfo - error z nazwą
+<p align="center">
+  <img src="views/StudentPracticesSummaryByPractiseID.png" alt="StudentPracticesSummaryByPractiseID">
+</p
+
+14. StudentsEnrolmentInfo 
+
+Widok przedstawia inforamacje dotyczące wszystkich studentów oraz liczbę wydarzeń na jaką jest zapisany.
 
 ```sql
+CREATE VIEW [dbo].[StudentsEnrolmentInfo] AS
+SELECT        
+	dbo.Students.StudentID, 
+	dbo.Students.FirstName, 
+	dbo.Students.LastName, 
+	COUNT(DISTINCT dbo.Order_details.OfferID) AS Num_of_events, 
+	dbo.Students.Phone
+FROM            
+	dbo.Users 
+INNER JOIN
+	dbo.Students ON dbo.Users.UserID = dbo.Students.StudentID 
+INNER JOIN
+	dbo.Orders ON dbo.Orders.StudentID = dbo.Students.StudentID 
+INNER JOIN
+	dbo.Order_details ON dbo.Order_details.OrderID = dbo.Orders.OrderID
+GROUP BY 
+	dbo.Students.StudentID, 
+	dbo.Students.FirstName, 
+	dbo.Students.LastName, 
+	dbo.Students.Phone
 ```
+<p align="center">
+  <img src="views/StudentsEnrolmentInfo.png" alt="StudentsEnrolmentInfo">
+</p
 
 15. StudiesProfitView
+
+Widok przedstawia dochód z poszczególnych studiów.
 
 ```sql
 CREATE VIEW [dbo].[StudiesProfitView] AS
@@ -1220,7 +1358,13 @@ FROM
     Studies s;
 ```
 
+<p align="center">
+  <img src="views/StudiesProfitView.png" alt="StudiesProfitView">
+</p
+
 16. WebinarProfitView
+
+Widok przedstawia dochód z poszczególnych webinarów.
 
 ```sql
 CREATE VIEW [dbo].[WebinarProfitView] AS
@@ -1236,9 +1380,14 @@ FROM
     Webinar w;
 ```
 
+<p align="center">
+  <img src="views/WebinarProfitView.png" alt="WebinarProfitView">
+</p
+
 **Procedury:**
 
 1. AddLessonAttendance
+
 Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danej lekcji, przed wykonaniem polecenia dodawania sprawdza także czy lekcja o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
 
 ```sql
@@ -1257,6 +1406,7 @@ END;
 ```
 
 2. AddMeetingAttendance
+
 Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danym spotkaniu, przed wykonaniem polecenia dodawania sprawdza także czy spotkanie o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
 
 ```sql
@@ -1275,6 +1425,7 @@ END;
 ```
 
 3. AddPractiseAttendance
+
 Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danych praktykach, przed wykonaniem polecenia dodawania sprawdza także czy praktyki o podanym ID istnieją oraz czy uczeń o podanym ID istnieje.
 
 ```sql
@@ -1293,6 +1444,7 @@ END;
 ```
 
 4. AddNewOrder
+
 Procedura ta umożliwa dodatnie do tabeli Orders nowego zamówienia dla studenta o podanym ID, jako datę zamówienia wstawia aktualną datę.
 
 ```sql
@@ -1307,6 +1459,7 @@ END;
 ```
 
 5. AddOrderDetails
+
 Procedura ta pozwala na dodanie szczegółów do konkretnego zamówienia, przyjmuje argumenty takie jak: numer zamówienia, nummer oferty zamówionego produktu, koszt tego produktu i ewentualną zniżkę, przed dodaniem do tabeli upewnia się czy suma wartości pozostałych kupionych produktów oraz tego wstawianego nie przekracza przypadkiem kwoty która została zapłacona za zamówienia.
 
 ```sql
@@ -1343,6 +1496,7 @@ END;
 ```
 
 6. AddPayment
+
 Procedura ta pozwala na dodanie nowego rekordu w tabeli Payments, dla konkretnego zamówieniam daty oraz kwoty oraz dla ewentualnej daty odroczenia płatności. Procedura sprawdza także czy podane ID zamówienia istnieje w tabeli z zamówieniami.
 
 ```sql
@@ -1458,6 +1612,7 @@ END;
 ```
 
 12. UpdateLessonAttendance
+
 Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danej lekcji, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
 
 ```sql
@@ -1477,6 +1632,7 @@ END;
 ```
 
 13. UpdateMeetingAttendance
+
 Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danym spotkaniu, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
 
 ```sql
@@ -1496,6 +1652,7 @@ END;
 ```
 
 14. UpdatePractiseAttendance
+
 Proceudra ta umożliwia zmianę statusu obecności danego ucznia na danych praktykach, przed wykonaniem polecenia sprawdza czy modyfikowany rekord obecności faktycznie istnieje.
 
 ```sql
@@ -1517,6 +1674,7 @@ END;
 **Funkcje:**
 
 1. CourseEnrolmentsNumber 
+
 Funkcja ta podaje ilość zapisanych użytkowników na podany kurs.
 
 ```sql
@@ -1540,6 +1698,7 @@ END;
 ```
 
 2. IsStudyEnrollmentPossible
+
 Funkcja ta przyjmuje jako argument ID oferty jakiegoś kierunku studiów a następnie zwraca wartość True/False w zależnosći czy na danym studium jest jeszcze miejsce do zapisania się.
 
 ```sql
@@ -1560,6 +1719,7 @@ END;
 ```
 
 3. StudyEnrollmentsNumber
+
 Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podane studium.
 
 ```sql
@@ -1582,6 +1742,7 @@ END;
 ```
 
 4. WebinarEnrolmentsNumber
+
 Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podany webinar.
 
 ```sql
@@ -1602,4 +1763,40 @@ BEGIN
 
     RETURN @Enrolments;
 END
+```
+
+
+**Triggery:**
+1. CheckStudentCountOnStudies
+
+Trigger sprawdza w momencie zapisu na wydarzenie czy wydarzenie osiągneło już limit studentów. Jeżeli nie ma już miejsc to anuluje próbę zapisu na to wydarzenie.
+
+```sql
+CREATE TRIGGER [dbo].[CheckStudentCountOnStudies]
+ON [dbo].[Order_details]
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    DECLARE @StudiesID INT,
+            @NewStudentCount INT,
+            @MaxStudentCapacity INT;
+
+    SELECT @StudiesID = o.OfferID
+    FROM inserted i
+    INNER JOIN Offers o ON i.OfferID = o.OfferID;
+
+    SELECT @NewStudentCount = COUNT(*)
+    FROM Order_details od
+    WHERE od.OfferID = @StudiesID;
+
+    SELECT @MaxStudentCapacity = s.StudentCapacity
+    FROM Studies s
+    WHERE s.StudiesID = @StudiesID;
+
+    IF (@NewStudentCount > @MaxStudentCapacity)
+    BEGIN
+        RAISERROR('Liczba studentów przekracza maksymalną pojemność studium!', 16, 1);
+        ROLLBACK;
+    END
+END;
 ```
