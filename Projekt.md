@@ -911,25 +911,25 @@ Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu 
 
 ```sql
 CREATE VIEW [dbo].[AttendanceMeetingView] AS
-SELECT
-    c.CourseID,
-    a.StudentID,
-	m.ModuleID,
-    SUM(CAST(a.Attendance AS INT)) AS Attendance,
-    COUNT(CAST(a.Attendance AS INT) * 100) AS AllMeeting,
-    CONCAT(AVG(CAST(a.Attendance AS INT) * 100), '%') AS AttendancePercentage
-FROM
-    Courses AS c
-INNER JOIN
-    Modules AS m ON m.CourseID = c.CourseID
-INNER JOIN
-    Meetings AS me ON me.ModuleID = m.ModuleID
-INNER JOIN
-    CourseAttendance AS a ON a.MeetingID = me.MeetingID
-GROUP BY
-    c.CourseID, a.StudentID, m.ModuleID;
+SELECT 
+    c.CourseID, 
+    c.CourseName, 
+    a.StudentID, 
+    s.FirstName, 
+    s.LastName,
+    m.ModuleID, 
+    m.Title, 
+    SUM(CAST(a.Attendance AS INT)) AS Attendance, 
+    COUNT(CAST(a.Attendance AS INT) * 100) AS AllMeeting, 
+    AVG(CAST(a.Attendance AS INT) * 100) AS AttendancePercentage
+FROM dbo.Courses AS c 
+    INNER JOIN dbo.Modules AS m ON m.CourseID = c.CourseID 
+    INNER JOIN dbo.Meetings AS me ON me.ModuleID = m.ModuleID 
+    INNER JOIN dbo.CourseAttendance AS a ON a.MeetingID = me.MeetingID INNER JOIN dbo.Students AS s ON a.StudentID = s.StudentID
+GROUP BY c.CourseID, c.CourseName, a.StudentID, s.FirstName, s.LastName, m.ModuleID, m.Title
 ```
 
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/AttendanceMeetingView.png" alt="AttendanceMeetingView">
 </p>
@@ -941,26 +941,22 @@ Widok ten identyfikuje, czy studenci zaliczyli kurs na podstawie procentowej obe
 
 ```sql
 CREATE VIEW [dbo].[CoursesPass] As
-SELECT
-    amv.CourseID,
-    amv.StudentID,
-    CONCAT((COUNT(amv.ModuleID) * 100) / c.ModulesNo, '%') AS AttendancePercentage,
-	c.ModulesNo,
-    CASE
-        WHEN ((COUNT(amv.ModuleID) * 100) / c.ModulesNo) >= 80 THEN 'Pass'
-        ELSE 'Fail'
-    END AS Result
-FROM
-    AttendanceMeetingView AS amv
-INNER JOIN
-    Courses AS c ON amv.CourseID = c.CourseID
-WHERE
-    AttendancePercentage = '100%'
-GROUP BY
-    amv.CourseID,
-    amv.StudentID,
-    c.ModulesNo;
+SELECT 
+    amv.CourseID, 
+    amv.CourseName, 
+    amv.StudentID, 
+    s.FirstName, 
+    s.LastName, 
+    COUNT(amv.ModuleID) * 100 / c.ModulesNo AS AttendancePercentage, 
+    c.ModulesNo, 
+    CASE WHEN ((COUNT(amv.ModuleID) * 100) / c.odulesNo) >= 80 THEN 'Pass' ELSE 'Fail' END AS Result
+FROM dbo.AttendanceMeetingView AS amv 
+    INNER JOIN dbo.Courses AS c ON amv.CourseID = c.CourseID 
+    INNER JOIN dbo.Students AS s ON amv.StudentID = s.StudentID
+WHERE amv.AttendancePercentage = 100
+GROUP BY amv.CourseID, amv.CourseName, amv.StudentID, s.FirstName, s.LastName, c.ModulesNo
 ```
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/CoursesPass.png" alt="CoursesPass">
 </p>
@@ -968,7 +964,7 @@ GROUP BY
 
 3. ConflictingTranslatorMeetings
 
-Widok przedstawia tłumaczy, którzy przypisani są do różnych wydarzeń odbywających sie w tym samym czasie.
+Widok przedstawia tłumaczy, którzy przypisani są do różnych meetingów odbywających sie w tym samym czasie.
 
 ```sql
 CREATE VIEW [dbo].[ConflictingTranslatorMeetings] AS
@@ -1018,24 +1014,22 @@ Widok przedstawia informacje dotyczące studentów zapisanych na kursy.
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToCourses] AS
 SELECT 
-    S.StudentID,
-    S.FirstName,
-    S.LastName,
-    O.OfferID As CourseID,
-    O.Name AS CourseName,
-    O.Description AS CourseDescription,
-    O.Place AS CoursePlace
-FROM 
-    Students S
-INNER JOIN 
-    Orders Ord ON S.StudentID = Ord.StudentID
-INNER JOIN 
-    Order_details Od ON Ord.OrderID = Od.OrderID
-INNER JOIN 
-    Offers O ON Od.OfferID = O.OfferID
-WHERE 
-    O.Type = 'Courses';
+    S.StudentID, 
+    S.FirstName, 
+    S.LastName, 
+    O.OfferID AS CourseID, 
+    O.Name AS CourseName, 
+    O.Description AS CourseDescription, 
+    O.Place AS CoursePlace,
+    C.StartDate
+FROM dbo.Students AS S 
+    INNER JOIN dbo.Orders AS Ord ON S.StudentID = Ord.StudentID 
+    INNER JOIN dbo.Order_details AS Od ON Ord.OrderID = Od.OrderID 
+    INNER JOIN dbo.Offers AS O ON Od.OfferID = O.OfferID 
+    INNER JOIN dbo.Courses AS C ON O.OfferID = C.CourseID
+WHERE  (O.Type = 'Courses')
 ```
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/EnrolledStudentsToCourses.png" alt="EnrolledStudentsToCourses">
 </p>
@@ -1046,25 +1040,25 @@ Widok przedstawia informacje dotyczące studentów zapisanych na zjazdy.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToGatherings] AS
-SELECT 
+SELECT
     S.StudentID,
     S.FirstName,
     S.LastName,
-    O.OfferID As GatheringID,
+    O.OfferID AS GatheringID,
     O.Name AS GatheringName,
     O.Description AS GatheringDescription,
-    O.Place AS GatheringPlace
-FROM 
-    Students S
-INNER JOIN 
-    Orders Ord ON S.StudentID = Ord.StudentID
-INNER JOIN 
-    Order_details Od ON Ord.OrderID = Od.OrderID
-INNER JOIN 
-    Offers O ON Od.OfferID = O.OfferID
-WHERE 
+    O.Place AS GatheringPlace,
+    G.[Date]
+FROM
+    dbo.Students S
+    INNER JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
+    INNER JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
+    INNER JOIN dbo.Offers O ON Od.OfferID = O.OfferID
+    INNER JOIN dbo.Gatherings G ON O.OfferID = G.GatheringID
+WHERE
     O.Type = 'Gathering';
 ```
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/EnrolledStudentsToGatherings.png" alt="EnrolledStudentsToGatherings">
 </p>
@@ -1075,25 +1069,28 @@ Widok przedstawia informacje dotyczące studentów zapisanych na studia.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToStudies] AS
-SELECT 
+SELECT
     S.StudentID,
     S.FirstName,
     S.LastName,
-    O.OfferID As StudiesID,
-    O.Name AS OfferName,
-    O.Description AS OfferDescription,
-    O.Place AS OfferPlace
-FROM 
-    Students S
-INNER JOIN 
-    Orders Ord ON S.StudentID = Ord.StudentID
-INNER JOIN 
-    Order_details Od ON Ord.OrderID = Od.OrderID
-INNER JOIN 
-    Offers O ON Od.OfferID = O.OfferID
-WHERE 
-    O.Type = 'Studies';
+    St.StudiesID,
+	O.Name AS OfferName, 
+	O.Description AS OfferDescription, 
+	O.Place AS OfferPlace,
+    MIN(G.[Date]) AS StartDate
+FROM
+    dbo.Students S
+    LEFT JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
+    LEFT JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
+    LEFT JOIN dbo.Offers O ON Od.OfferID = O.OfferID
+    LEFT JOIN dbo.Studies St ON O.OfferID = St.StudiesID
+    LEFT JOIN dbo.Semesters Sem ON St.StudiesID = Sem.StudiesID
+    LEFT JOIN dbo.Gatherings G ON Sem.SemesterID = G.SemesterID
+WHERE
+    O.Type = 'Studies'
+GROUP BY S.StudentID, S.FirstName, S.LastName, St.StudiesID, O.OfferID, O.Name, O.Description, O.Place;
 ```
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/EnrolledStudentsToStudies.png" alt="EnrolledStudentsToStudies">
 </p>
@@ -1104,26 +1101,25 @@ Widok przedstawia informacje dotyczące studentów zapisanych na webinary.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToWebinars] AS
-SELECT 
+SELECT
     S.StudentID,
     S.FirstName,
     S.LastName,
-    O.OfferID As WebinarID,
-    O.Name AS WebinarName,
-    O.Description AS WebinarDescription,
-    O.Place AS WebinarPlace
-FROM 
-    Students S
-INNER JOIN 
-    Orders Ord ON S.StudentID = Ord.StudentID
-INNER JOIN 
-    Order_details Od ON Ord.OrderID = Od.OrderID
-INNER JOIN 
-    Offers O ON Od.OfferID = O.OfferID
-WHERE 
+    O.OfferID AS WebinarID,
+    O.Name AS GatheringName,
+    O.Description AS GatheringDescription,
+    O.Place AS GatheringPlace,
+    W.[Date]
+FROM
+    dbo.Students S
+    INNER JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
+    INNER JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
+    INNER JOIN dbo.Offers O ON Od.OfferID = O.OfferID
+    INNER JOIN dbo.Webinar W ON O.OfferID = W.WebinarID
+WHERE
     O.Type = 'Webinar';
 ```
-
+<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
 <p align="center">
   <img src="views/EnrolledStudentsToWebinars.png" alt="EnrolledStudentsToWebinars">
 </p
@@ -1669,6 +1665,93 @@ BEGIN
         WHERE PractiseID = @PractiseID AND StudentID = @StudentID;
     END
 END;
+```
+
+14. GetProfitInTimeRange
+
+Proceudra przedstawia dochód z poszczególnych kursów w zadanym przedziale czasowym. 
+
+```sql
+CREATE PROCEDURE GetProfitInTimeRange
+    @From DATE,
+    @To DATE
+AS
+BEGIN
+    SELECT
+        c.CourseName,
+        ISNULL((
+            SELECT SUM(od.Value)
+            FROM Order_details od
+            INNER JOIN Payments p ON od.OrderID = p.OrderID
+            WHERE od.OfferID = c.CourseID AND p.[Date] BETWEEN @From AND @To
+        ), 0) AS Profit
+    FROM Courses c; 
+END;
+```
+
+15. EnrolledStudentsToCoursesInTimeRange
+
+Proceudra przedstawia studentów zapisanych na poszczególne kursy w zadanym przedziale czasowym. 
+
+```sql
+CREATE PROCEDURE EnrolledStudentsToCoursesInTimeRange
+    @From DATE,
+    @To DATE
+AS
+BEGIN
+    SELECT *
+    FROM StudentCourseDetailsView
+    WHERE StartDate BETWEEN @From AND @To;
+END;
+```
+16.EnrolledStudentsToGatheringsInTimeRange
+
+Proceudra przedstawia studentów zapisanych na poszczególne zjazdy w zadanym przedziale czasowym. 
+
+```sql
+CREATE PROCEDURE EnrolledStudentsToGatheringsInTimeRange
+    @From DATE,
+    @To DATE
+AS
+BEGIN
+    SELECT *
+    FROM EnrolledStudentsToGatherings
+    WHERE [Date] BETWEEN @From AND @To;
+END;
+
+```
+
+17.EnrolledStudentsToStudiesInDateRange
+
+Proceudra przedstawia studentów zapisanych na poszczególne studia w zadanym przedziale czasowym. 
+
+```sql
+CREATE PROCEDURE EnrolledStudentsToStudiesInDateRange
+    @From DATE,
+    @To DATE
+AS
+BEGIN
+    SELECT *
+    FROM dbo.EnrolledStudentsToStudies
+    WHERE StartDate BETWEEN @From AND @To;
+END;
+```
+
+18.EnrolledStudentsToWebinarsInDateRange
+
+Proceudra przedstawia studentów zapisanych na poszczególne webinary w zadanym przedziale czasowym. 
+
+```sql
+CREATE PROCEDURE EnrolledStudentsToWebinarsInDateRange
+    @From DATE,
+    @To DATE
+AS
+BEGIN
+    SELECT *
+    FROM dbo.EnrolledStudentsToWebinars
+    WHERE [Date] BETWEEN @From AND @To;
+END;
+
 ```
 
 **Funkcje:**

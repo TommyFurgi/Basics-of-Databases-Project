@@ -1,0 +1,6 @@
+poprawiłem pierwsze 8 widoków, trzeba dodać aktualne zdjęcia
+i dodałem te procedury
+-EnrolledStudentsToWebinarsInDateRange
+-EnrolledStudentsToGatheringsInTimeRange
+-EnrolledStudentsToCoursesInTimeRange
+-GetProfitInTimeRange
