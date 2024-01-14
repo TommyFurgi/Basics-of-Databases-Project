@@ -4,3 +4,6 @@ i dodałem te procedury
 -EnrolledStudentsToGatheringsInTimeRange
 -EnrolledStudentsToCoursesInTimeRange
 -GetProfitInTimeRange
+
+przejrzałem wszystke widoki i poprawiłem je
+ustawiłem aktualne zdjecia widoków
