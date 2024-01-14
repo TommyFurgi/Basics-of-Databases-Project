@@ -7,3 +7,8 @@ i dodałem te procedury
 
 przejrzałem wszystke widoki i poprawiłem je
 ustawiłem aktualne zdjecia widoków
+
+14.01
+- dodałem procedury na dodwanie modulow, spotkan, kursow i ofert
+- dodałem trigery na zmiany w tych tabelach
+- podowałem opisy do trigerow, funkcji

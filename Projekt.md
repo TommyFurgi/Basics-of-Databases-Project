@@ -64,7 +64,7 @@ Tabela zawiera informacje o wszystkich wydarzeniach jakie są oferowane. Zawiera
 
 ```sql
 CREATE TABLE [dbo].[Offers](
-	[OfferID] [int] NOT NULL,
+	[OfferID] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [nchar](50) NOT NULL,
 	[Type] [nchar](15) NOT NULL,
 	[Description] [nchar](50) NULL,
@@ -468,7 +468,7 @@ Tabela zawiera wszystkie moduły, znajdujące się kursach, posiada klucz głów
 
 ```sql
 CREATE TABLE [dbo].[Modules](
-	[ModuleID] [int] NOT NULL,
+	[ModuleID] [int] IDENTITY(1,1) NOT NULL,
 	[CourseID] [int] NOT NULL,
 	[Title] [nchar](50) NOT NULL,
 	[Type] [nchar](10) NOT NULL,
@@ -505,7 +505,7 @@ Tabela zawiera dane o spotkaniach odbywających się w ramach konkretnego moduł
 
 ```sql
 CREATE TABLE [dbo].[Meetings](
-	[MeetingID] [int] NOT NULL,
+	[MeetingID] [int] IDENTITY(1,1) NOT NULL,
 	[ModuleID] [int] NOT NULL,
 	[LanguageID] [int] NOT NULL,
 	[Date] [date] NOT NULL,
@@ -1866,11 +1866,156 @@ END;
 
 ```
 
+19. UpdateMeetingDate
+
+Procedura UpdateMeetingDate umożliwia aktualizację daty spotkania o określonym MeetingID na nową datę @NewMeetingDate. Natomiast procedura AddNewOffer pozwala na dodanie nowej oferty do bazy danych, sprawdzając wcześniej, czy oferta o podanej nazwie już istnieje, aby uniknąć konfliktów. Jeśli oferta istnieje, procedura zwraca błąd, w przeciwnym razie dodaje nową ofertę z określonymi parametrami, takimi jak Name, Type, Description, Place, Price i DiscountToStudents.
+
+```sql
+CREATE PROCEDURE [dbo].[UpdateMeetingDate]
+    @MeetingID INT,
+    @NewMeetingDate DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE Meetings
+    SET Date = @NewMeetingDate
+    WHERE MeetingID = @MeetingID;
+END;
+```
+
+20. AddNewOffer
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewOffer]
+    @Name NVARCHAR(50),
+	@Type NVARCHAR(15),
+    @Description NVARCHAR(50),
+    @Place NVARCHAR(20),
+	@Price money,
+    @DiscountToStudents DECIMAL(5, 2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM Offers WHERE Name = @Name)
+    BEGIN
+        THROW 50000, 'Oferta o podanej nazwie już istnieje.', 1;
+        RETURN;
+    END
+
+    INSERT INTO Offers (Name, Type, Description, Place, Price, DiscountToStudents)
+    VALUES (@Name, @Type, @Description, @Place, @Price, @DiscountToStudents);
+
+END;
+```
+
+21. AddNewCourse
+
+Procedura AddNewCourse służy do dodawania nowego kursu do bazy danych. Najpierw wywołuje procedurę AddNewOffer, aby dodać nową ofertę typu 'Courses', a następnie pobiera identyfikator nowo dodanej oferty. Następnie dodaje kurs z odpowiednimi parametrami, takimi jak TopicID, CourseName, StartDate, ModulesNo, PaymentDay, FullPrice, Deposit i Discount.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewCourse]
+    @CourseName NVARCHAR(30),
+	@TopicID Int,
+    @CourseDescription NVARCHAR(50),
+    @CoursePlace NVARCHAR(20),
+    @Price MONEY,
+    @DiscountToStudents DECIMAL(5, 2),
+    @StartDate DATE,
+    @EndDate DATE,
+	@Deposit Money,
+	@PaymentDay Date
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    EXEC AddNewOffer @CourseName, 'Courses', @CourseDescription, @CoursePlace, @Price, @DiscountToStudents;
+
+    DECLARE @NewOfferID INT;
+    SET @NewOfferID = (SELECT SCOPE_IDENTITY());
+
+    INSERT INTO Courses (CourseID, TopicID, CourseName, StartDate, ModulesNo, PaymentDay, FullPrice, Deposit, Discount)
+    VALUES (@NewOfferID, @TopicID, @CourseName, @StartDate, 0, @PaymentDay, @Price, @Deposit, @DiscountToStudents);
+END;
+```
+
+22. AddNewModule
+
+Procedura AddNewModule służy do dodawania nowego modułu związanego z określonym kursem. Przed dodaniem modułu sprawdza istnienie kursu o podanym CourseID, a następnie pobiera datę rozpoczęcia kursu i dodaje nowy moduł z odpowiednimi parametrami, takimi jak Title, Type, EndDate i Classroom.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewModule]
+    @CourseID INT,
+    @Title NVARCHAR(50),
+    @Type NVARCHAR(10),
+    @EndDate DATE,
+    @Classroom NVARCHAR(10)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Courses WHERE CourseID = @CourseID)
+    BEGIN
+        THROW 50000, 'Podane CourseID nie istnieje w Courses.', 1;
+        RETURN;
+    END
+
+    DECLARE @StartDate DATE;
+    SET @StartDate = (SELECT StartDate FROM Courses WHERE CourseID = @CourseID);
+
+    INSERT INTO Modules (CourseID, Title, Type, StartDate, EndDate, Classroom)
+    VALUES (@CourseID, @Title, @Type, @StartDate, @EndDate, @Classroom);
+END;
+```
+
+23. AddNewMeeting
+
+Ta procedura przechowuje informacje o nowym spotkaniu w bazie danych. Przyjmuje różne parametry, takie jak ModuleID, LanguageID, Date, Type, Place, Link, Title, TeacherID i TranslatorID. Przed dodaniem spotkania sprawdza istnienie modułu, nauczyciela i tłumacza (jeśli podano TranslatorID), a w przypadku braku zapisuje wartość NULL w TranslatorID.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewMeeting]
+    @ModuleID INT,
+	@LanguageID INT,
+	@Date date,
+	@Type NVARCHAR(10),
+	@Place NVARCHAR(10),
+	@Link NVARCHAR(30),
+    @Title NVARCHAR(50),
+    @TeacherID INT,
+	@TranslatorID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Modules WHERE ModuleID = @ModuleID)
+    BEGIN
+        THROW 50000, 'Moduł o podanym ModuleID nie istnieje.', 1;
+        RETURN;
+    END
+
+	IF NOT EXISTS (SELECT 1 FROM TeachingStaff WHERE TeacherID = @TeacherID)
+    BEGIN
+        THROW 50000, 'Nauczyciel o podanym TeacherID nie istnieje.', 1;
+        RETURN;
+    END
+
+	IF NOT EXISTS (SELECT 1 FROM Translators WHERE TranslatorID = @TranslatorID)
+    BEGIN
+        SET @TranslatorID = NULL;
+    END
+
+    INSERT INTO Meetings (ModuleID, LanguageID, Date, Type, Place, Link, TeacherID, TranslatorID)
+    VALUES (@ModuleID, @LanguageID, @Date, @Type, @Place, @Link, @TeacherID, @TranslatorID);
+
+END;
+```
+
 **Funkcje:**
 
 1. CourseEnrolmentsNumber 
 
-Funkcja ta podaje ilość zapisanych użytkowników na podany kurs.
+Ta funkcja zwraca ilość użytkowników aktualnie zapisanych na określony kurs o identyfikatorze (CourseID). Wykorzystuje informacje o zapisach, płatnościach i szczegółach zamówienia, filtrując rezultaty dla konkretnego kursu, a także sprawdzając, czy zamówienie nie zostało anulowane.
 
 ```sql
 Create FUNCTION [dbo].[CourseEnrolmentsNumber](@CourseID INT)
@@ -1894,7 +2039,7 @@ END;
 
 2. IsStudyEnrollmentPossible
 
-Funkcja ta przyjmuje jako argument ID oferty jakiegoś kierunku studiów a następnie zwraca wartość True/False w zależnosći czy na danym studium jest jeszcze miejsce do zapisania się.
+Ta funkcja sprawdza, czy istnieje możliwość zapisania się na studium o określonym identyfikatorze (StudyID), porównując aktualną liczbę zapisanych studentów (wykorzystując funkcję dbo.StudyEnrollmentsNumber) do pojemności studium. Jeżeli istnieje dostępna przestrzeń, zwraca wartość 1, w przeciwnym razie 0.
 
 ```sql
 CREATE FUNCTION [dbo].[IsStudyEnrollmentPossible] (@StudyID INT)
@@ -1915,7 +2060,7 @@ END;
 
 3. StudyEnrollmentsNumber
 
-Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podane studium.
+Ta funkcja zwraca ilość obecnie zapisanych studentów na studium o określonym identyfikatorze (StudyID). Wykorzystuje do tego liczbę zamówień (Orders), płatności (Payments), szczegóły zamówienia (Order_details), oferty (Offers) i samego studium (Studies). Funkcja uwzględnia tylko te zapisy, które nie zostały anulowane (CancelDate is Null) i dotyczą danego studium.
 
 ```sql
 CREATE FUNCTION [dbo].[StudyEnrollmentsNumber] (@StudyID INT)
@@ -1938,7 +2083,7 @@ END;
 
 4. WebinarEnrolmentsNumber
 
-Funkcja ta zwraca ilość użytkowników aktualnie zapisanych na podany webinar.
+Ta funkcja zwraca liczbę zapisanych studentów na webinar o określonym identyfikatorze (WebinarID). Wykorzystuje do tego liczbę zamówień (Orders), płatności (Payments), szczegóły zamówienia (Order_details), oferty (Offers) i samego webinaru (Webinar). Funkcja uwzględnia tylko te zapisy, które nie zostały anulowane (CancelDate is Null) i dotyczą danego webinaru.
 
 ```sql
 CREATE FUNCTION [dbo].[WebinarEnrolmentsNumber](@WebinarID INT)
@@ -1964,7 +2109,7 @@ END
 **Triggery:**
 1. CheckStudentCountOnStudies
 
-Trigger sprawdza w momencie zapisu na wydarzenie czy wydarzenie osiągneło już limit studentów. Jeżeli nie ma już miejsc to anuluje próbę zapisu na to wydarzenie.
+Ten trigger sprawdza, czy liczba studentów zapisanych na studium przekracza maksymalną pojemność studium po dodaniu lub aktualizacji zamówienia. Jeśli liczba przekracza pojemność, wyświetla komunikat o błędzie i wykonuje rollback transakcji, uniemożliwiając przekroczenie limitu pojemności studium.
 
 ```sql
 CREATE TRIGGER [dbo].[CheckStudentCountOnStudies]
@@ -1994,4 +2139,129 @@ BEGIN
         ROLLBACK;
     END
 END;
+```
+
+2. UpdateModulesNumber
+
+Ten trigger automatycznie aktualizuje liczbę modułów (ModulesNo) w tabeli Courses po dodaniu nowego modułu. Działa na zasadzie zliczania liczby modułów przypisanych do danego kursu i aktualizuje odpowiedni rekord w tabeli Courses.
+
+```sql
+CREATE TRIGGER [dbo].[UpdateModulesNumber]
+ON [dbo].[Modules]
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @CourseID INT;
+
+    SELECT @CourseID = CourseID
+    FROM inserted;
+
+    UPDATE Courses
+    SET ModulesNo = (
+        SELECT ISNULL(COUNT(ModuleID), 0)
+        FROM Modules
+        WHERE CourseID = @CourseID
+    )
+    WHERE CourseID = @CourseID;
+END;
+
+ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateModulesNumber]
+```
+
+
+3. CheckAndUpdateModuleDates
+
+Ten trigger sprawdza i aktualizuje daty modułów (StartDate i EndDate) w tabeli Modules po zmianie daty spotkania (MeetingDate) w tabeli Meetings. Jeśli spotkanie już się odbyło, trigger zwraca błąd i blokuje transakcję, w przeciwnym razie aktualizuje odpowiednie daty modułów.
+
+```sql
+CREATE TRIGGER [dbo].[CheckAndUpdateModuleDates]
+ON [dbo].[Meetings]
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @ModuleID INT;
+    DECLARE @NewMeetingDate DATE;
+    DECLARE @StartDate DATE;
+    DECLARE @EndDate DATE;
+	DECLARE @OldMeetingDate DATE;
+
+    SELECT 
+        @ModuleID = m.ModuleID,
+        @NewMeetingDate = i.Date,
+		@OldMeetingDate = m.Date,
+        @StartDate = mo.StartDate,
+        @EndDate = mo.EndDate
+    FROM 
+        inserted i
+        INNER JOIN Modules mo ON i.ModuleID = mo.ModuleID
+        INNER JOIN Meetings m ON i.ModuleID = m.ModuleID;
+
+	IF @OldMeetingDate > GETDATE()
+		BEGIN
+			THROW 50000, 'Nie można zmienić daty spotkania, ponieważ wydarzenie się już odbyło.', 1;
+			ROLLBACK;
+		END
+    ELSE
+		BEGIN
+			IF @NewMeetingDate < @StartDate
+			BEGIN
+				UPDATE Modules
+				SET StartDate = @NewMeetingDate
+				WHERE ModuleID = @ModuleID;
+			END;
+
+			IF @NewMeetingDate > @EndDate
+			BEGIN
+				UPDATE Modules
+				SET EndDate = @NewMeetingDate
+				WHERE ModuleID = @ModuleID;
+			END;
+		END;
+END;
+
+ALTER TABLE [dbo].[Meetings] ENABLE TRIGGER [CheckAndUpdateModuleDates]
+```
+
+
+4. UpdateCourseStartDate
+
+Trigger sprawdza i aktualizuje datę rozpoczęcia kursu (StartDate) w tabeli Courses po zmianie daty rozpoczęcia modułu (NewStartDate) w tabeli Modules. Jeśli nowa data rozpoczęcia modułu jest późniejsza niż data zakończenia kursu, trigger zwraca błąd i blokuje transakcję, w przeciwnym razie aktualizuje datę rozpoczęcia kursu.
+
+```sql
+CREATE TRIGGER [dbo].[UpdateCourseStartDate]
+ON [dbo].[Modules]
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @CourseID INT;
+    DECLARE @NewStartDate DATE;
+    DECLARE @EndDate DATE;
+
+    SELECT 
+        @CourseID = i.CourseID,
+        @NewStartDate = i.StartDate,
+        @EndDate = i.EndDate
+    FROM 
+        inserted i
+
+    IF @NewStartDate > @EndDate
+    BEGIN
+        THROW 50000, 'Nowa data rozpoczęcia modułu nie może być późniejsza niż data zakończenia kursu.', 1;
+        ROLLBACK;
+    END
+    ELSE
+    BEGIN
+        UPDATE Courses
+        SET StartDate = @NewStartDate
+        WHERE CourseID = @CourseID;
+    END;
+END;
+
+ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
 ```
