@@ -50,9 +50,8 @@
 
 **Diagram bazy danych:**
 <p align="center">
-  <img src="views/Diagram_v3.png" alt="Schemat">
+  <img src="views/diagram.png" alt="Schemat">
 </p>
-
 
 **Tabele:**
 
@@ -70,21 +69,24 @@ CREATE TABLE [dbo].[Offers](
 	[Description] [nchar](50) NULL,
 	[Place] [nchar](20) NOT NULL,
 	[Price] [money] NOT NULL,
+	[DiscountToStudents] [float] NULL,
  CONSTRAINT [PK_Offers] PRIMARY KEY CLUSTERED 
 (
 	[OfferID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Name_Length] CHECK  ((len([Name])>=(5)))
+ALTER TABLE [dbo].[Offers] ADD  CONSTRAINT [DF_DiscountToStudents]  DEFAULT ((0.10)) FOR [DiscountToStudents]
 
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Name_Length]
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_DiscountToStudentsForGathering] CHECK  (([Type]<>'Gathering' OR [Type]='Gathering' AND ([DiscountToStudents] IS NULL OR [DiscountToStudents]>=(0) AND [DiscountToStudents]<=(1))))
 
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Price_NonNegative] CHECK  (([Price]>=(0)))
+ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_DiscountToStudentsForGathering]
 
-ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Price_NonNegative]
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_PricePrecision] CHECK  (([Price]>=(0) AND round([Price],(2))=[Price]))
 
-ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Type_Values] CHECK  (([Type]='Gathering' OR [Type]='Lesson' OR [Type]='Studies' OR [Type]='Courses' OR [Type]='Webinar'))
+ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_PricePrecision]
+
+ALTER TABLE [dbo].[Offers]  WITH CHECK ADD  CONSTRAINT [CHK_Type_Values] CHECK  (([Type]='Gathering' OR [Type]='Studies' OR [Type]='Courses' OR [Type]='Webinar'))
 
 ALTER TABLE [dbo].[Offers] CHECK CONSTRAINT [CHK_Type_Values]
 ```
@@ -117,10 +119,6 @@ ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [FK_Webinar_TeachingStaf
 REFERENCES [dbo].[TeachingStaff] ([TeacherID])
 
 ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [FK_Webinar_TeachingStaff]
-
-ALTER TABLE [dbo].[Webinar]  WITH CHECK ADD  CONSTRAINT [CHK_Webinar_WebinarName_Length] CHECK  ((len([WebinarName])>(5)))
-
-ALTER TABLE [dbo].[Webinar] CHECK CONSTRAINT [CHK_Webinar_WebinarName_Length]
 ```
 
 3. Studies:
@@ -153,15 +151,6 @@ ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [FK_Studies_Offers]
 ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_Fee_NonNegative] CHECK  (([Fee]>=(0)))
 
 ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Fee_NonNegative]
-
-ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_StudentCapacity_Minimum] CHECK  (([StudentCapacity]>=(10)))
-
-ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_StudentCapacity_Minimum]
-
-ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [CHK_Studies_Name_Length] CHECK  ((len([Name])>(5)))
-
-ALTER TABLE [dbo].[Studies] CHECK CONSTRAINT [CHK_Studies_Name_Length]
-
 ```
 
 4. Courses:
@@ -170,7 +159,7 @@ Tabela zawiera spis wszystkich kursów z kluczem głównym (CourseID), posiada i
 
 ```sql
 CREATE TABLE [dbo].[Courses](
-	[CourseID] [int] NOT NULL,
+	[CourseID] [int] IDENTITY(1,1) NOT NULL,
 	[TopicID] [int] NOT NULL,
 	[CourseName] [nchar](30) NOT NULL,
 	[StartDate] [datetime] NOT NULL,
@@ -194,10 +183,6 @@ ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [FK_Courses_Topics] FORE
 REFERENCES [dbo].[Topics] ([TopicID])
 
 ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [FK_Courses_Topics]
-
-ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_Courses_CourseName_Length] CHECK  ((len([CourseName])>(5)))
-
-ALTER TABLE [dbo].[Courses] CHECK CONSTRAINT [CHK_Courses_CourseName_Length]
 
 ALTER TABLE [dbo].[Courses]  WITH CHECK ADD  CONSTRAINT [CHK_Deposit_Range] CHECK  (([Deposit]>=(0) AND [Deposit]<=[FullPrice]))
 
@@ -226,7 +211,7 @@ Tabela zawiera informacje o zjazdach, posaida klucz główny (GatheringID) i sem
 
 ```sql
 CREATE TABLE [dbo].[Gatherings](
-	[GatheringID] [int] NOT NULL,
+    [GatheringID] [int] IDENTITY(1,1) NOT NULL,
 	[Semester] [int] NOT NULL,
 	[Date] [datetime] NOT NULL,
  CONSTRAINT [PK_Gatherings] PRIMARY KEY CLUSTERED 
@@ -252,7 +237,7 @@ W tabeli znajdują się informacje o wszystkich semestrach na wszystkich kierunk
 
 ```sql
 CREATE TABLE [dbo].[Semesters](
-	[SemesterID] [int] NOT NULL,
+	[SemesterID] [int] IDENTITY(1,1) NOT NULL,
 	[StudiesID] [int] NOT NULL,
 	[Semester_no] [int] NOT NULL,
  CONSTRAINT [PK_Semesters] PRIMARY KEY CLUSTERED 
@@ -277,7 +262,7 @@ Tabela zawiera dane o praktykach, posiada klucz główny (PractiseID), semestrze
 
 ```sql
 CREATE TABLE [dbo].[Practices](
-	[PractiseID] [int] NOT NULL,
+    [PractiseID] [int] IDENTITY(1,1) NOT NULL,
 	[SemesterID] [int] NOT NULL,
 	[EmployeeID] [int] NOT NULL,
 	[Address] [nchar](40) NOT NULL,
@@ -311,7 +296,7 @@ Tabela posiada informacje o obecności studentów na praktykach, posiada klucz g
 
 ```sql
 CREATE TABLE [dbo].[PractiseAttendance](
-	[PractiseAttendanceID] [int] NOT NULL,
+	[PractiseAttendanceID] [int] IDENTITY(1,1) NOT NULL,
 	[PractiseID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[Attendance] [bit] NOT NULL,
@@ -343,7 +328,7 @@ Tabela zawiera informacje o przedmiotach występujących w semestrach z kluczem 
 
 ```sql
 CREATE TABLE [dbo].[Subjects](
-	[SubjectID] [int] NOT NULL,
+	[SubjectID] [int] IDENTITY(1,1) NOT NULL,
 	[SemesterID] [int] NOT NULL,
 	[SubjectName] [nchar](50) NOT NULL,
 	[Description] [nchar](70) NULL,
@@ -357,10 +342,6 @@ ALTER TABLE [dbo].[Subjects]  WITH CHECK ADD  CONSTRAINT [FK_Subjects_Semesters]
 REFERENCES [dbo].[Semesters] ([SemesterID])
 
 ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [FK_Subjects_Semesters]
-
-ALTER TABLE [dbo].[Subjects]  WITH CHECK ADD  CONSTRAINT [CHK_Subjects_SubjectName_Length] CHECK  ((len([SubjectName])>(5)))
-
-ALTER TABLE [dbo].[Subjects] CHECK CONSTRAINT [CHK_Subjects_SubjectName_Length]
 ```
 
 10. Lessons:
@@ -416,7 +397,7 @@ Tabela posiada informacje o obecności studentów na lekcjach, posiada klucz gł
 
 ```sql
 CREATE TABLE [dbo].[LessonsAttendance](
-	[LessonsAttendenseID] [int] NOT NULL,
+	[LessonsAttendenseID] [int] IDENTITY(1,1) NOT NULL,
 	[LessonID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[Attendance] [bit] NOT NULL,
@@ -448,7 +429,7 @@ Tabela posiada dane o tematach kursów, bądź lekcji, posiada klucz główny (T
 
 ```sql
 CREATE TABLE [dbo].[Topics](
-	[TopicID] [int] NOT NULL,
+    [TopicID] [int] IDENTITY(1,1) NOT NULL,
 	[TopicName] [nchar](50) NOT NULL,
 	[Description] [nchar](70) NULL,
  CONSTRAINT [PK_Topics] PRIMARY KEY CLUSTERED 
@@ -456,10 +437,6 @@ CREATE TABLE [dbo].[Topics](
 	[TopicID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-
-ALTER TABLE [dbo].[Topics]  WITH CHECK ADD  CONSTRAINT [CHK_Topics_TopicName_Length] CHECK  ((len([TopicName])>(5)))
-
-ALTER TABLE [dbo].[Topics] CHECK CONSTRAINT [CHK_Topics_TopicName_Length]
 ```
 
 13. Modules:
@@ -489,10 +466,6 @@ ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [FK_Modules_Courses]
 ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Date_Order] CHECK  (([EndDate]>[StartDate]))
 
 ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Date_Order]
-
-ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Title_Length] CHECK  ((len([Title])>(5)))
-
-ALTER TABLE [dbo].[Modules] CHECK CONSTRAINT [CHK_Modules_Title_Length]
 
 ALTER TABLE [dbo].[Modules]  WITH CHECK ADD  CONSTRAINT [CHK_Modules_Type_Values] CHECK  (([Type]='online' OR [Type]='hybrid' OR [Type]='stationary'))
 
@@ -546,7 +519,7 @@ Tabela posiada informacje o obecności studentów na spotkaniach w donym module 
 
 ```sql
 CREATE TABLE [dbo].[CourseAttendance](
-	[AttendanceID] [int] NOT NULL,
+	[AttendanceID] [int] IDENTITY(1,1) NOT NULL,
 	[MeetingID] [int] NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[Attendance] [bit] NOT NULL,
@@ -572,7 +545,7 @@ ALTER TABLE [dbo].[CourseAttendance] CHECK CONSTRAINT [FK_Attendance_Students]
 Tabela przypisuje zamówienie do określonego studenta, posiada klucz główny (OrderID), studenta, do którego należy zamówienie, datę jego złożenia (StudentID, OrderDate). 
 ```sql
 CREATE TABLE [dbo].[Orders](
-	[OrderID] [int] NOT NULL,
+    [OrderID] [int] IDENTITY(1,1) NOT NULL,
 	[StudentID] [int] NOT NULL,
 	[OrderDate] [datetime] NOT NULL,
  CONSTRAINT [PK_Cart] PRIMARY KEY CLUSTERED 
@@ -589,11 +562,11 @@ ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Students]
 
 17. Order_Details:
 
-Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje zamówienie do złożonego zamówienia, który się w nim znajdu (OrderID, EnrollmentID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
+Tabela zawiera szczegółowe informacje o konkretnym zamówieniu, posiada klucz główny (OrderDetailsID), przypisuje ofertę do złożonego zamówienia, który się w nim znajdu (OrderID, OfferID), wartość produktu i zniżke(Value, Discount), zniażka jest wartoscia typu float z zakresu od 0 do 1. 
 
 ```sql
 CREATE TABLE [dbo].[Order_details](
-	[OrderDetailsID] [int] NOT NULL,
+    [OrderDetailsID] [int] IDENTITY(1,1) NOT NULL,
 	[OrderID] [int] NOT NULL,
 	[OfferID] [int] NOT NULL,
 	[Value] [money] NOT NULL,
@@ -629,7 +602,7 @@ Tabela zawiera dane o płatnościach, posiada klucz główny (PaymentID), łącz
 
 ```sql
 CREATE TABLE [dbo].[Payments](
-	[PaymentID] [int] NOT NULL,
+	[PaymentID] [int] IDENTITY(1,1) NOT NULL,
 	[OrderID] [int] NOT NULL,
 	[Date] [datetime] NOT NULL,
 	[Value] [money] NOT NULL,
@@ -656,7 +629,7 @@ Tabela zawiera wszystkich użytkowników z całej bazy danych, posiada klucz gł
 
 ```sql
 CREATE TABLE [dbo].[Users](
-	[UserID] [int] NOT NULL,
+	[UserID] [int] IDENTITY(1,1) NOT NULL,
 	[Login] [nchar](20) NOT NULL,
 	[Password] [nchar](20) NOT NULL,
  CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
@@ -672,10 +645,6 @@ CREATE TABLE [dbo].[Users](
 ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Login_Length] CHECK  ((len([Login])>=(5)))
 
 ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Login_Length]
-
-ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Password_Digit] CHECK  ((patindex('%[0-9]%',[Password])>(0)))
-
-ALTER TABLE [dbo].[Users] CHECK CONSTRAINT [CHK_Users_Password_Digit]
 
 ALTER TABLE [dbo].[Users]  WITH CHECK ADD  CONSTRAINT [CHK_Users_Password_Length] CHECK  ((len([Password])>=(8)))
 
@@ -727,7 +696,7 @@ Tabela zawiera o wszystkich pracownikach, posiada klucz główny (EmployeeID) or
 
 ```sql
 CREATE TABLE [dbo].[Employees](
-	[EmployeeID] [int] NOT NULL,
+    [EmployeeID] [int] IDENTITY(1,1) NOT NULL,
 	[PositionID] [int] NOT NULL,
 	[FirstName] [nchar](20) NOT NULL,
 	[LastName] [nchar](20) NOT NULL,
@@ -825,7 +794,7 @@ Tabela zawiera inforamacja o admnistarotach zawiera klucz głowny (AdminID) oraz
 
 ```sql
 CREATE TABLE [dbo].[Administrators](
-	[AdminID] [int] NOT NULL,
+	[AdminID] [int] IDENTITY(1,1) NOT NULL,
 	[Add_date] [datetime] NOT NULL,
  CONSTRAINT [PK_Administrators_1] PRIMARY KEY CLUSTERED 
 (
@@ -847,7 +816,7 @@ Tabela zawiera informacje o krajach, posiada klucz główny (CountryID), nazwę 
 
 ```sql
 CREATE TABLE [dbo].[Countries](
-	[CountryID] [int] NOT NULL,
+	[CountryID] [int] IDENTITY(1,1) NOT NULL,
 	[CountryName] [nchar](20) NOT NULL,
 	[LanguageID] [int] NOT NULL,
  CONSTRAINT [PK_Countries2] PRIMARY KEY CLUSTERED 
@@ -860,10 +829,6 @@ ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [FK_Countries_Language
 REFERENCES [dbo].[Languages] ([LanguageID])
 
 ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [FK_Countries_Languages]
-
-ALTER TABLE [dbo].[Countries]  WITH CHECK ADD  CONSTRAINT [CHK_Countries_CountryName_Length] CHECK  ((len([CountryName])>=(3)))
-
-ALTER TABLE [dbo].[Countries] CHECK CONSTRAINT [CHK_Countries_CountryName_Length]
 ```
 
 26. Languages:
@@ -872,17 +837,13 @@ Tabela zawiera informacje o językach, posiada klucz główny (LanguageID) oraz 
 
 ```sql
 CREATE TABLE [dbo].[Languages](
-	[LanguageID] [int] NOT NULL,
+	[LanguageID] [int] IDENTITY(1,1) NOT NULL,
 	[LanguageName] [nchar](20) NOT NULL,
  CONSTRAINT [PK_Languages] PRIMARY KEY CLUSTERED 
 (
 	[LanguageID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-
-ALTER TABLE [dbo].[Languages]  WITH CHECK ADD  CONSTRAINT [CHK_Languages_LanguageName_Length] CHECK  ((len([LanguageName])>=(3)))
-
-ALTER TABLE [dbo].[Languages] CHECK CONSTRAINT [CHK_Languages_LanguageName_Length]
 ```
 
 27. Position
@@ -891,7 +852,7 @@ Tabela zawiera informacje o stanowiskach, posiada klucz główny (PositionID) or
 
 ```sql
 CREATE TABLE [dbo].[Positions](
-	[PositionID] [int] NOT NULL,
+	[PositionID] [int] IDENTITY(1,1) NOT NULL,
 	[PositionName] [nchar](15) NOT NULL,
  CONSTRAINT [PK_Position] PRIMARY KEY CLUSTERED 
 (
