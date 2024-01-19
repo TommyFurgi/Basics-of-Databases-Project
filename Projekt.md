@@ -873,21 +873,28 @@ Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu 
 ```sql
 CREATE VIEW [dbo].[AttendanceMeetingView] AS
 SELECT 
-    c.CourseID, 
-    c.CourseName, 
-    a.StudentID, 
-    s.FirstName, 
-    s.LastName,
-    m.ModuleID, 
-    m.Title, 
-    SUM(CAST(a.Attendance AS INT)) AS Attendance, 
-    COUNT(CAST(a.Attendance AS INT) * 100) AS AllMeeting, 
+	c.CourseID, 
+	c.CourseName, 
+	a.StudentID, 
+	s.FirstName, 
+	s.LastName, 
+	m.ModuleID, 
+	m.Title, 
+	c.StartDate, 
+	SUM(CAST(a.Attendance AS INT)) AS Attendance, 
+	COUNT(CAST(a.Attendance AS INT) * 100) AS AllMeeting, 
     AVG(CAST(a.Attendance AS INT) * 100) AS AttendancePercentage
-FROM dbo.Courses AS c 
-    INNER JOIN dbo.Modules AS m ON m.CourseID = c.CourseID 
-    INNER JOIN dbo.Meetings AS me ON me.ModuleID = m.ModuleID 
-    INNER JOIN dbo.CourseAttendance AS a ON a.MeetingID = me.MeetingID INNER JOIN dbo.Students AS s ON a.StudentID = s.StudentID
-GROUP BY c.CourseID, c.CourseName, a.StudentID, s.FirstName, s.LastName, m.ModuleID, m.Title
+FROM     
+	dbo.Courses AS c 
+INNER JOIN 
+	dbo.Modules AS m ON m.CourseID = c.CourseID 
+INNER JOIN
+    dbo.Meetings AS me ON me.ModuleID = m.ModuleID 
+INNER JOIN
+    dbo.CourseAttendance AS a ON a.MeetingID = me.MeetingID 
+INNER JOIN
+    dbo.Students AS s ON a.StudentID = s.StudentID
+GROUP BY c.CourseID, c.CourseName, a.StudentID, s.FirstName, s.LastName, m.ModuleID, m.Title, c.StartDate
 ```
 
 <p align="center">
@@ -902,21 +909,27 @@ Widok ten identyfikuje, czy studenci zaliczyli kurs na podstawie procentowej obe
 ```sql
 CREATE VIEW [dbo].[CoursesPass] As
 SELECT 
-    amv.CourseID, 
-    amv.CourseName, 
-    amv.StudentID, 
-    s.FirstName, 
-    s.LastName, 
-    COUNT(amv.ModuleID) * 100 / c.ModulesNo AS AttendancePercentage, 
-    c.ModulesNo, 
-    CASE WHEN ((COUNT(amv.ModuleID) * 100) / c.odulesNo) >= 80 THEN 'Pass' ELSE 'Fail' END AS Result
-FROM dbo.AttendanceMeetingView AS amv 
-    INNER JOIN dbo.Courses AS c ON amv.CourseID = c.CourseID 
-    INNER JOIN dbo.Students AS s ON amv.StudentID = s.StudentID
-WHERE amv.AttendancePercentage = 100
-GROUP BY amv.CourseID, amv.CourseName, amv.StudentID, s.FirstName, s.LastName, c.ModulesNo
+	amv.CourseID, 
+	amv.CourseName, 
+	amv.StudentID, 
+	s.FirstName, 
+	s.LastName, 
+	c.StartDate, 
+	COUNT(amv.ModuleID) * 100 / c.ModulesNo AS AttendancePercentage, 
+	c.ModulesNo, 
+	CASE WHEN ((COUNT(amv.ModuleID) * 100) / c.ModulesNo) 
+                  >= 80 THEN 'Pass' ELSE 'Fail' END AS Result
+FROM     
+	dbo.AttendanceMeetingView AS amv 
+INNER JOIN
+    dbo.Courses AS c ON amv.CourseID = c.CourseID 
+INNER JOIN
+    dbo.Students AS s ON amv.StudentID = s.StudentID
+WHERE  
+	amv.AttendancePercentage = 100
+GROUP BY amv.CourseID, amv.CourseName, amv.StudentID, s.FirstName, s.LastName, c.ModulesNo, c.StartDate
 ```
-<!-- TRZEBA ZDJĘCIE ZMIENIĆ!!! -->
+
 <p align="center">
   <img src="views/CoursesPass.png" alt="CoursesPass">
 </p>
@@ -971,37 +984,42 @@ SELECT
         AND od.OfferID = c.CourseID
     ), 0) AS Profit,
 	c.ModulesNo,
-	FORMAT(C.StartDate, 'dd-MM-yyyy') AS StartDate
+	c.StartDate
 FROM
     Courses c
 ```
-
 <p align="center">
-  <img src="views/CourseProfitView.png" alt="ConflictingTranslatorMeetings">
+  <img src="views/CourseProfitView.png" alt="CourseProfitView">
 </p>
 
 5. EnrolledStudentsToCourses
 
 
-Widok przedstawia informacje o studentach zapisanych na kursy. Zawiera identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator kursu (CourseID), nazwę kursu (CourseName), opis kursu (CourseDescription), miejsce kursu (CoursePlace), oraz datę rozpoczęcia kursu (StartDate). 
+Widok przedstawia informacje o studentach zapisanych na kursy. Zawiera identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator kursu (CourseID), nazwę kursu (Name), opis kursu (Description), miejsce kursu (Place), oraz datę rozpoczęcia kursu (StartDate). 
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToCourses] AS
 SELECT 
-    S.StudentID, 
-    S.FirstName, 
-    S.LastName, 
-    O.OfferID AS CourseID, 
-    O.Name AS CourseName, 
-    O.Description AS CourseDescription, 
-    O.Place AS CoursePlace,
-    FORMAT(C.StartDate, 'dd-MM-yyyy') AS StartDate
-FROM dbo.Students AS S 
-    INNER JOIN dbo.Orders AS Ord ON S.StudentID = Ord.StudentID 
-    INNER JOIN dbo.Order_details AS Od ON Ord.OrderID = Od.OrderID 
-    INNER JOIN dbo.Offers AS O ON Od.OfferID = O.OfferID 
-    INNER JOIN dbo.Courses AS C ON O.OfferID = C.CourseID
-WHERE  (O.Type = 'Courses')
+	S.StudentID, 
+	S.FirstName, 
+	S.LastName, 
+	O.OfferID AS CourseID, 
+	O.Name AS Name, 
+	O.Description AS Description, 
+	O.Place AS Place, 
+	C.StartDate AS StartDate
+FROM     
+	Students AS S 
+INNER JOIN
+    Orders AS Ord ON S.StudentID = Ord.StudentID 
+INNER JOIN
+    Order_details AS Od ON Ord.OrderID = Od.OrderID 
+INNER JOIN
+    Offers AS O ON Od.OfferID = O.OfferID 
+INNER JOIN
+    Courses AS C ON O.OfferID = C.CourseID
+WHERE  
+	O.Type = 'Courses'
 ```
 
 <p align="center">
@@ -1010,27 +1028,30 @@ WHERE  (O.Type = 'Courses')
 
 6. EnrolledStudentsToGatherings
 
-Widok [EnrolledStudentsToGatherings] dostarcza informacje o studentach zapisanych na spotkania. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator spotkania (GatheringID), nazwę spotkania (GatheringName), opis spotkania (GatheringDescription), miejsce spotkania (GatheringPlace), oraz datę spotkania (Date).
+Widok [EnrolledStudentsToGatherings] dostarcza informacje o studentach zapisanych na spotkania. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator spotkania (GatheringID), nazwę spotkania (Name), opis spotkania (Description), miejsce spotkania (Place), oraz datę spotkania (Date).
 
 ```sql
-CREATE VIEW [dbo].[EnrolledStudentsToGatherings] AS
-SELECT
-    S.StudentID,
-    S.FirstName,
-    S.LastName,
-    O.OfferID AS GatheringID,
-    O.Name AS GatheringName,
-    O.Description AS GatheringDescription,
-    O.Place AS GatheringPlace,
-    FORMAT(G.Date, 'dd-MM-yyyy') AS Date
-FROM
-    dbo.Students S
-    INNER JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
-    INNER JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
-    INNER JOIN dbo.Offers O ON Od.OfferID = O.OfferID
-    INNER JOIN dbo.Gatherings G ON O.OfferID = G.GatheringID
-WHERE
-    O.Type = 'Gathering';
+SELECT 
+	S.StudentID, 
+	S.FirstName, 
+	S.LastName, 
+	O.OfferID AS GatheringID, 
+	O.Name AS Name, 
+	O.Description AS Description, 
+	O.Place AS Palce, 
+	G.Date AS Date
+FROM     
+	Students AS S 
+INNER JOIN
+    Orders AS Ord ON S.StudentID = Ord.StudentID 
+INNER JOIN
+    Order_details AS Od ON Ord.OrderID = Od.OrderID 
+INNER JOIN
+    Offers AS O ON Od.OfferID = O.OfferID 
+INNER JOIN
+    Gatherings AS G ON O.OfferID = G.GatheringID
+WHERE  
+	O.Type = 'Gathering'
 ```
 
 <p align="center">
@@ -1039,30 +1060,37 @@ WHERE
 
 7. EnrolledStudentsToStudies
 
-Widok dostarcza informacje o studentach zapisanych na studia. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator studiów (StudiesID), nazwę oferty studiów (OfferName), opis oferty studiów (OfferDescription), miejsce oferty studiów (OfferPlace), oraz datę rozpoczęcia studiów (StartDate). 
+Widok dostarcza informacje o studentach zapisanych na studia. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator studiów (StudiesID), nazwę oferty studiów (Name), opis oferty studiów (Description), miejsce oferty studiów (Place), oraz datę rozpoczęcia studiów (StartDate). 
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToStudies] AS
-SELECT
-    S.StudentID,
-    S.FirstName,
-    S.LastName,
-    St.StudiesID,
-	O.Name AS OfferName, 
-	O.Description AS OfferDescription, 
-	O.Place AS OfferPlace,
-    MIN(G.[Date]) AS StartDate
-FROM
-    dbo.Students S
-    LEFT JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
-    LEFT JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
-    LEFT JOIN dbo.Offers O ON Od.OfferID = O.OfferID
-    LEFT JOIN dbo.Studies St ON O.OfferID = St.StudiesID
-    LEFT JOIN dbo.Semesters Sem ON St.StudiesID = Sem.StudiesID
-    LEFT JOIN dbo.Gatherings G ON Sem.SemesterID = G.SemesterID
-WHERE
-    O.Type = 'Studies'
-GROUP BY S.StudentID, S.FirstName, S.LastName, St.StudiesID, O.OfferID, O.Name, O.Description, O.Place;
+SELECT 
+	S.StudentID, 
+	S.FirstName, 
+	S.LastName, 
+	St.StudiesID, 
+	O.Name AS Name, 
+	O.Description AS Description, 
+	O.Place AS Place, 
+	MIN(G.Date) AS StartDate
+FROM     
+	Students AS S 
+LEFT OUTER JOIN
+    Orders AS Ord ON S.StudentID = Ord.StudentID 
+LEFT OUTER JOIN
+    Order_details AS Od ON Ord.OrderID = Od.OrderID 
+LEFT OUTER JOIN
+    Offers AS O ON Od.OfferID = O.OfferID 
+LEFT OUTER JOIN
+    Studies AS St ON O.OfferID = St.StudiesID 
+LEFT OUTER JOIN
+    Semesters AS Sem ON St.StudiesID = Sem.StudiesID 
+LEFT OUTER JOIN
+    Gatherings AS G ON Sem.SemesterID = G.SemesterID
+WHERE  
+	O.Type = 'Studies'
+GROUP BY
+	S.StudentID, S.FirstName, S.LastName, St.StudiesID, O.OfferID, O.Name, O.Description, O.Place
 ```
 
 <p align="center">
@@ -1071,26 +1099,30 @@ GROUP BY S.StudentID, S.FirstName, S.LastName, St.StudiesID, O.OfferID, O.Name, 
 
 8. EnrolledStudentsToWebinars
 
-Widok dostarcza informacje o studentach zapisanych na webinary. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator webinaru (WebinarID), nazwę spotkania (GatheringName), opis spotkania (GatheringDescription), miejsce spotkania (GatheringPlace), oraz datę webinaru (Date). Zastosowanie tego widoku ułatwia monitorowanie uczestnictwa studentów w webinarach, umożliwiając identyfikację zapisanych osób oraz szczegółowe informacje o danym wydarzeniu edukacyjnym.
+Widok dostarcza informacje o studentach zapisanych na webinary. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator webinaru (WebinarID), nazwę spotkania (Name), opis spotkania (Description), miejsce spotkania (Place), oraz datę webinaru (Date). Zastosowanie tego widoku ułatwia monitorowanie uczestnictwa studentów w webinarach, umożliwiając identyfikację zapisanych osób oraz szczegółowe informacje o danym wydarzeniu edukacyjnym.
 
 ```sql
 CREATE VIEW [dbo].[EnrolledStudentsToWebinars] AS
-SELECT
-    S.StudentID,
-    S.FirstName,
-    S.LastName,
-    O.OfferID AS WebinarID,
-    O.Name AS GatheringName,
-    O.Description AS GatheringDescription,
-    O.Place AS GatheringPlace,
-    W.[Date]
-FROM
-    dbo.Students S
-    INNER JOIN dbo.Orders Ord ON S.StudentID = Ord.StudentID
-    INNER JOIN dbo.Order_details Od ON Ord.OrderID = Od.OrderID
-    INNER JOIN dbo.Offers O ON Od.OfferID = O.OfferID
-    INNER JOIN dbo.Webinar W ON O.OfferID = W.WebinarID
-WHERE
+SELECT 
+	S.StudentID, 
+	S.FirstName, 
+	S.LastName, 
+	O.OfferID AS WebinarID, 
+	O.Name AS WebinarName, 
+	O.Description AS Descritpion, 
+	O.Place AS Place, 
+	W.Date
+FROM     
+	Students AS S 
+INNER JOIN
+	Orders AS Ord ON S.StudentID = Ord.StudentID 
+INNER JOIN
+    Order_details AS Od ON Ord.OrderID = Od.OrderID 
+INNER JOIN
+    Offers AS O ON Od.OfferID = O.OfferID 
+INNER JOIN
+	Webinar AS W ON O.OfferID = W.WebinarID
+WHERE  
     O.Type = 'Webinar';
 ```
 <p align="center">
@@ -1116,10 +1148,12 @@ WITH t AS (
 
 SELECT 
 	s.StudentID,
-	TRIM(s.FirstName) + ' ' + TRIM(s.LastName) AS Student_name,
+	s.FirstName,
+	s.LastName,
 	o.OfferID,
 	o.Name,
-	FORMAT((d.Value*(1-d.Discount)-P.Value), '0.00') AS Debt
+	o.Type,
+	CAST((d.Value*(1-d.Discount)-P.Value) AS DECIMAL(10,2)) AS Debt
 FROM 
 	Gatherings as g
 INNER JOIN 
@@ -1137,17 +1171,16 @@ INNER JOIN
 WHERE 
 	t.OrderStatus = 0 AND g.Date < GETDATE()
 
-GROUP BY 
-    s.StudentID, s.FirstName, s.LastName, o.OfferID, o.Name, P.Value, d.Value, d.Discount
-
 UNION 
 
 SELECT 
 	s.StudentID,
-	TRIM(s.FirstName) + ' ' + TRIM(s.LastName) AS Student_name,
+	s.FirstName,
+	s.LastName,
 	o.OfferID,
 	o.Name,
-	FORMAT((d.Value*(1-d.Discount)-P.Value), '0.00') AS Debt
+	o.Type,
+	CAST((d.Value*(1-d.Discount)-P.Value) AS DECIMAL(10,2)) AS Debt
 FROM 
 	Courses as c
 INNER JOIN 
@@ -1164,17 +1197,17 @@ INNER JOIN
     Payments AS P ON r.OrderID = P.OrderID
 WHERE 
 	t.OrderStatus = 0 AND c.StartDate < GETDATE()
-GROUP BY 
-    s.StudentID, s.FirstName, s.LastName, o.OfferID, o.Name, P.Value, d.Value, d.Discount
 
 UNION
 
 SELECT 
 	s.StudentID,
-	TRIM(s.FirstName) + ' ' + TRIM(s.LastName) AS Student_name,
+	s.FirstName,
+	s.LastName,
 	o.OfferID,
 	o.Name,
-	FORMAT((d.Value*(1-d.Discount)-P.Value), '0.00') AS Debt
+	o.Type,
+	CAST((d.Value*(1-d.Discount)-P.Value) AS DECIMAL(10,2)) AS Debt
 FROM 
 	Webinar as w
 INNER JOIN 
@@ -1191,25 +1224,21 @@ INNER JOIN
     Payments AS P ON r.OrderID = P.OrderID
 WHERE 
 	t.OrderStatus = 0 AND w.Date < GETDATE()
-	GROUP BY 
-    s.StudentID, s.FirstName, s.LastName, o.OfferID, o.Name, P.Value, d.Value, d.Discount
 
 UNION
 
 SELECT 
 	s.StudentID,
-	TRIM(s.FirstName) + ' ' + TRIM(s.LastName) AS Student_name,
+	s.FirstName,
+	s.LastName,
 	o.OfferID,
 	o.Name,
-	FORMAT((d.Value*(1-d.Discount)-P.Value), '0.00') AS Debt
+	o.Type,
+	CAST((d.Value*(1-d.Discount)-P.Value) AS DECIMAL(10,2)) AS Debt
 FROM 
 	Studies as sd
 INNER JOIN 
 	Offers as o ON sd.StudiesID = o.OfferID
-INNER JOIN 
-	Semesters as se ON se.StudiesID=sd.StudiesID
-INNER JOIN 
-	Gatherings as g ON g.SemesterID = se.SemesterID
 INNER JOIN 
 	Order_details as d ON d.OfferID = o.OfferID
 INNER JOIN 
@@ -1220,9 +1249,8 @@ INNER JOIN
 	Students as s ON s.StudentID = r.StudentID
 INNER JOIN
     Payments AS P ON r.OrderID = P.OrderID
-GROUP BY 
-    s.StudentID, s.FirstName, s.LastName, o.OfferID, o.Name, P.Value, t.OrderStatus, d.Value, d.Discount
-HAVING min(g.Date) < GETDATE() AND t.OrderStatus = 0;
+WHERE
+	t.OrderStatus = 0;
 ```
 
 <p align="center">
@@ -1238,15 +1266,16 @@ Widok [OrdersPaymentsView] dostarcza kompleksowych informacji na temat płatnoś
 CREATE VIEW [dbo].[OrdersPaymentsView] AS
 SELECT 
     Ord.OrderID, 
-    FORMAT(SUM(OD.Value*(1-OD.Discount)), '0.00') AS Value, 
-    FORMAT(P.Value, '0.00') AS Paid, 
-    FORMAT(
-        IIF(P.CancelDate IS NOT NULL, 0.00, SUM(OD.Value*(1-OD.Discount))-P.Value), '0.00'
+    CAST(SUM(OD.Value*(1-OD.Discount)) AS decimal(10,2)) AS Value, 
+    CAST(P.Value AS decimal(10,0)) AS Paid, 
+    CAST(
+        IIF(P.CancelDate IS NOT NULL, 0.00, SUM(OD.Value*(1-OD.Discount))-P.Value) AS DECIMAl(10,2)
     ) AS ToPay, 
     P.CancelDate,
-	FORMAT(OrderDate, 'dd-MM-yyyy') AS OrderDate,
+	OrderDate,
 	ord.StudentID,
-	TRIM(FirstName) + ' ' + TRIM(LastName) AS Orderer_name
+	FirstName,
+	LastName
 FROM 
     Orders AS Ord
 INNER JOIN 
@@ -1273,14 +1302,19 @@ SELECT
 	Type, 
 	COUNT(Order_details.OrderID) AS AllOrders, 
 	SUM(Value) AS Profit,
-	FORMAT(OrderDate, 'dd-MM-yyyy') AS OrderDate,
+	OrderDate,
 	Orders.StudentID,
-	TRIM(FirstName) + ' ' + TRIM(LastName) AS Orderer_name
-FROM dbo.Order_details
-JOIN Offers ON Offers.OfferID = Order_details.OfferID
-JOIN Orders ON Orders.OrderID = Order_details.OrderID
-JOIN Students ON Students.StudentID = Orders.StudentID
-GROUP BY Order_details.OfferID, Type, OrderDate, Orders.StudentID, FirstName, LastName
+	FirstName,
+	LastName
+FROM Order_details
+JOIN 
+	Offers ON Offers.OfferID = Order_details.OfferID
+JOIN 
+	Orders ON Orders.OrderID = Order_details.OrderID
+JOIN 
+	Students ON Students.StudentID = Orders.StudentID
+GROUP BY
+	Order_details.OfferID, Type, OrderDate, Orders.StudentID, FirstName, LastName
 ```
 
 <p align="center">
@@ -1314,7 +1348,7 @@ SELECT
             THEN 'Pass'
         ELSE 'Fail'
     END AS Result,
-    FORMAT(SUM(CAST(out_t.Attendance AS FLOAT)) / PracticeCounts.TotalPracticesCount, '0.00') AS Attendance
+    CAST(SUM(CAST(out_t.Attendance AS FLOAT)) / PracticeCounts.TotalPracticesCount AS DECIMAL(10, 2)) AS Attendance
 FROM 
     StudentPracticesSummaryByPractiseID out_t
 JOIN 
@@ -1330,7 +1364,7 @@ GROUP BY
 
 13. StudentPracticesSummaryByPractiseID
 
-Zapytanie to generuje raport na temat uczestnictwa studentów w praktykach zawodowych. Dla każdego studenta i praktyki, prezentuje identyfikator studenta, imię, nazwisko, identyfikator praktyki, informację czy student ukończył wszystkie zajęcia praktyczne ('True' lub 'False'), oraz procentowe obliczenie frekwencji studenta w praktyce.
+Zapytanie to generuje raport na temat uczestnictwa studentów w praktykach zawodowych. Dla każdego studenta i praktyki, prezentuje identyfikator studenta, imię, nazwisko, identyfikator praktyki, datę praktyki oraz informację czy student ukończył wszystkie zajęcia praktyczne ('True' lub 'False'), oraz procentowe obliczenie frekwencji studenta w praktyce.
 
 ```sql
 CREATE VIEW [dbo].[StudentPracticesSummaryByPractiseID] AS
@@ -1339,21 +1373,24 @@ SELECT
     S.FirstName,
     S.LastName,
 	PA.PractiseID,
+	p.StartDate,
     CASE WHEN SUM(CAST(PA.Attendance AS INT)) = COUNT(PA.Attendance)
          THEN 'True'
          ELSE 'False'
     END AS CompletedAllPractices,
-	FORMAT(SUM(CAST(PA.Attendance AS FLOAT)) / COUNT(PA.Attendance), '0.00') AS Attendance
+	CAST(SUM(CAST(PA.Attendance AS INT)) * 1.0 / NULLIF(COUNT(PA.Attendance), 0) AS DECIMAL(10, 2)) AS Attendance
 FROM 
     PractiseAttendance PA
 JOIN 
     Students S ON PA.StudentID = S.StudentID
+JOIN 
+	Practices p ON p.PractiseID = PA.PractiseID
 GROUP BY 
-    PA.StudentID, PA.PractiseID, S.FirstName, S.LastName;
+    PA.StudentID, PA.PractiseID, S.FirstName, S.LastName, p.StartDate;
 ```
 
 <p align="center">
-  <img src="views/StudentPracticesSummaryByPractiseID.png" alt="StudentPracticesSummaryByPractiseID">
+  <img src="views/StudentPracticesSummaryByPractiseID.png"   alt="StudentPracticesSummaryByPractiseID">
 </p>
 
 14. StudentsEnrolmentInfo 
@@ -1361,26 +1398,54 @@ GROUP BY
 Widok przedstawia informacje o zapisach studentów, uwzględniając identyfikator studenta, imię, nazwisko, liczbę unikalnych wydarzeń, do których się zapisali, oraz numer telefonu.
 
 ```sql
-CREATE VIEW [dbo].[StudentsEnrolmentInfo] AS
 SELECT        
-	dbo.Students.StudentID, 
-	dbo.Students.FirstName, 
-	dbo.Students.LastName, 
-	COUNT(DISTINCT dbo.Order_details.OfferID) AS Num_of_events, 
-	dbo.Students.Phone
+    s.StudentID, 
+    s.FirstName, 
+    s.LastName, 
+    COUNT(DISTINCT od.OfferID) AS NumOfEvents, 
+    s.Phone,
+    ISNULL((
+        SELECT 
+            COUNT(StudentID)
+        FROM 
+            EnrolledStudentsToCourses 
+        WHERE
+            StudentID = s.StudentID
+            ), 0) AS CoursesNumber,
+    ISNULL((
+        SELECT 
+            COUNT(StudentID)
+        FROM 
+            EnrolledStudentsToGatherings
+        WHERE
+            StudentID = s.StudentID
+            ), 0) AS GatheringsNumber,
+    ISNULL((
+        SELECT 
+            COUNT(StudentID)
+        FROM 
+            EnrolledStudentsToStudies
+        WHERE
+            StudentID = s.StudentID
+            ), 0) AS StudiesNumber,
+    ISNULL((
+        SELECT 
+            COUNT(StudentID)
+        FROM 
+            EnrolledStudentsToWebinars
+        WHERE
+            StudentID = s.StudentID
+            ), 0) AS WebinarNumber
+
 FROM            
-	dbo.Users 
+    Users u 
 INNER JOIN
-	dbo.Students ON dbo.Users.UserID = dbo.Students.StudentID 
+    Students s ON u.UserID = s.StudentID 
 INNER JOIN
-	dbo.Orders ON dbo.Orders.StudentID = dbo.Students.StudentID 
+    Orders o ON o.StudentID = s.StudentID
 INNER JOIN
-	dbo.Order_details ON dbo.Order_details.OrderID = dbo.Orders.OrderID
-GROUP BY 
-	dbo.Students.StudentID, 
-	dbo.Students.FirstName, 
-	dbo.Students.LastName, 
-	dbo.Students.Phone
+    Order_details od ON od.OrderID = o.OrderID
+GROUP BY s.StudentID, s.FirstName, s.LastName, s.Phone
 ```
 <p align="center">
   <img src="views/StudentsEnrolmentInfo.png" alt="StudentsEnrolmentInfo">
@@ -1410,7 +1475,8 @@ SELECT
         FROM Semesters sem
         WHERE sem.StudiesID = s.StudiesID
     ), 0) AS Semesters_number,
-    TRIM(e.FirstName) + ' ' + TRIM(e.LastName) AS Menager_name
+    e.FirstName,
+	e.LastName
 FROM
     Studies s
 LEFT JOIN TeachingStaff t ON t.TeacherID = s.MenagerID
@@ -1441,8 +1507,9 @@ SELECT
         WHERE od.OrderID IN (SELECT p.OrderID FROM Payments p)
         AND od.OfferID = w.WebinarID
     ), 0) AS Profit,
-	FORMAT(w.Date, 'dd-MM-yyyy') AS Event_date,
-	TRIM(e.FirstName) + ' ' + TRIM(e.LastName) AS Teacher_name
+	w.Date,
+	e.FirstName,
+	e.LastName
 FROM
     Webinar w
 JOIN TeachingStaff t ON t.TeacherID = w.TeacherID
@@ -1451,6 +1518,168 @@ JOIN Employees e ON e.EmployeeID = t.TeacherID
 
 <p align="center">
   <img src="views/WebinarProfitView.png" alt="WebinarProfitView">
+</p>
+
+17. AllTeacherConflicts
+
+Widok "AllTeacherConflicts" identyfikuje konflikty w harmonogramie nauczycieli, uwzględniając spotkania, webinary i lekcje. Dla każdej pary konfliktujących spotkań/lekcji, widok dostarcza informacje o nauczycielu (PersonID), jego imieniu i nazwisku, typie oferty (Meeting, Webinar lub Lesson), identyfikatorze oferty (ID), dacie rozpoczęcia i zakończenia obu ofert (Date1, Duration1, Date2, Duration2). Konflikty są uwzględniane w przypadku nachodzenia się czasów lub dat.
+
+```sql
+CREATE VIEW [dbo].[AllTeacherConflicts] AS 
+WITH MergedMeetings AS (
+    SELECT 
+        M1.MeetingID AS ID, 
+		M1.TeacherID AS PersonID,
+        M1.Date AS MeetingDate, 
+		NULL AS Duration,
+		'Meeting' as offerType
+    FROM 
+        Meetings M1
+
+	UNION
+
+	SELECT 
+        W1.WebinarID AS ID, 
+		W1.TeacherID AS PersonID,
+        W1.Date AS WebinarDate, 
+		NULL AS Duration,
+		'Webinar' as offerType
+    FROM 
+        Webinar W1
+
+	UNION
+
+	SELECT 
+		L1.LessonID AS OfferID,
+		L1.TeacherID AS PersonID, 
+		L1.Date AS StartTime,
+		L1.Duration,
+		'Lesson' as offerType
+	FROM 
+		Lessons L1
+
+)
+SELECT 
+    M1.PersonID, 
+    FirstName, 
+    LastName, 
+    M1.offerType AS OfferType1, 
+    M1.ID AS ID1,
+    M2.offerType AS OfferType2, 
+    M2.ID AS ID2,
+    M1.MeetingDate as Date1, 
+    M1.Duration AS Duration1, 
+    M2.MeetingDate as Date2, 
+    M2.Duration AS Duration2
+FROM 
+    MergedMeetings AS M1 
+JOIN MergedMeetings AS M2 on M1.PersonID = M2.PersonID
+JOIN Employees as E on M1.PersonID = E.EmployeeID
+WHERE 
+	M1.ID < M2.ID 
+	AND (
+		    (M1.Duration IS NOT NULL 
+            AND M2.Duration IS NOT NULL 
+            AND CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate) 
+            AND DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', M1.MeetingDate), M1.Duration) > CONVERT(TIME, M2.MeetingDate))
+		OR (
+            (M1.Duration IS NULL OR M2.Duration IS NULL )
+            AND CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate))
+    );
+```
+
+<p align="center">
+  <img src="views/AllTeacherConflicts.png" alt="AllTeacherConflicts">
+</p>
+
+18. AllTranslatorsConflicts
+
+Widok "AllTranslatorsConflicts" identyfikuje konflikty w grafiku tłumaczy, zarówno w przypadku spotkań, jak i lekcji. Dla każdej pary konfliktujących spotkań/lekcji, widok dostarcza informacje o tłumaczu (PersonID), jego imieniu i nazwisku, typie oferty (Meeting lub Lesson), identyfikatorze oferty (ID), dacie rozpoczęcia i zakończenia obu ofert (Date1, Duration1, Date2, Duration2). Konflikty są uwzględniane w przypadku nachodzenia się czasów lub dat.
+
+```sql
+CREATE VIEW [dbo].[AllTranslatorsConflicts] AS
+WITH MergedMeetings AS (
+	SELECT 
+		MeetingID AS ID, 
+		TranslatorID AS PersonID, 
+		Date AS MeetingDate, 
+		NULL AS Duration, 
+		'Meeting' AS offerType
+    FROM     dbo.Meetings AS M1
+    
+	UNION
+	
+	SELECT 
+		LessonID AS OfferID, 
+		TranslatorID AS PersonID, 
+		Date AS StartTime, Duration, 
+		'Lesson' AS offerType
+    FROM     
+		dbo.Lessons AS L1)
+
+SELECT 
+	M1.PersonID, 
+	E.FirstName, 
+	E.LastName, 
+	M1.offerType AS OfferType1, 
+	M1.ID AS ID1, 
+	M2.offerType AS OfferType2, 
+	M2.ID AS ID2, 
+	M1.MeetingDate AS 
+	Date1, M1.Duration AS Duration1, 
+	M2.MeetingDate AS Date2, 
+    M2.Duration AS Duration2
+FROM    
+	MergedMeetings AS M1 
+INNER JOIN
+    MergedMeetings AS M2 ON M1.PersonID = M2.PersonID AND M1.ID < M2.ID 
+INNER JOIN
+    dbo.Employees AS E ON M1.PersonID = E.EmployeeID
+WHERE  
+	(M1.Duration IS NOT NULL) AND (M2.Duration IS NOT NULL) AND (CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate)) AND 
+	(DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', M1.MeetingDate), M1.Duration) 
+                      > CONVERT(TIME, M2.MeetingDate)) OR
+                      (M1.Duration IS NULL) AND (M1.MeetingDate = M2.MeetingDate) OR
+                    (M2.Duration IS NULL) AND (CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate))
+        
+```
+
+<p align="center">
+  <img src="views/AllTranslatorsConflicts.png" alt="AllTranslatorsConflicts">
+</p>
+
+19. ConflictingTranslatorLessons
+
+
+Widok "ConflictingTranslatorLessons" identyfikuje konfliktujące lekcje tłumaczy, gdzie dwie lekcje prowadzone przez tego samego tłumacza zachodzą na siebie. Zapewnia informacje o lekcjach (LessonID1 i LessonID2), ich dacie, tłumaczu (PersonID), oraz czasach rozpoczęcia i zakończenia obu lekcji.
+
+```sql
+CREATE VIEW [dbo].[ConflictingTranslatorLessons] AS
+SELECT 
+    L1.LessonID AS LessonID1, 
+    L2.LessonID AS LessonID2, 
+    L1.Date AS MeetingDate, 
+    L1.TranslatorID AS PersonID, 
+    T.FirstName, 
+    T.LastName,
+	L1.Date AS StartTime1, L1.Duration,
+	DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', L1.Date), L1.Duration) AS EndTime1,
+	DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', L2.Date), L2.Duration) AS EndTime2
+FROM 
+    Lessons L1
+JOIN 
+    Lessons L2 ON L1.TranslatorID = L2.TranslatorID
+JOIN 
+    Employees T ON L1.TranslatorID = T.EmployeeID
+WHERE 
+    L1.LessonID <> L2.LessonID 
+	AND L1.LessonID < L2.LessonID 
+	AND CONVERT(DATE, L1.Date) = CONVERT(DATE, L2.DATE)
+    AND DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', L1.Date), L1.Duration) > CONVERT(TIME,L2.Date)
+```
+
+<p align="center">
+  <img src="views/ConflictingTranslatorLessons.png" alt="ConflictingTranslatorLessons">
 </p>
 
 **Procedury:**
@@ -2226,3 +2455,11 @@ END;
 
 ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
 ```
+
+**Role**
+
+W systemie proponujemy zdefiniowanie następujących ról:
+
+- __Administrator__ - dostęp do wszystkich tabel, procedur oraz widoków
+- __Pracownik__ - 
+- __Klient__ - 

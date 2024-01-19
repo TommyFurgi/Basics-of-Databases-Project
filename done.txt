@@ -12,3 +12,7 @@ ustawiłem aktualne zdjecia widoków
 - dodałem procedury na dodwanie modulow, spotkan, kursow i ofert
 - dodałem trigery na zmiany w tych tabelach
 - podowałem opisy do trigerow, funkcji
+
+
+!!!! WAŻNE 
+sprawdźcie czy w widoku nr 10 i 9 wszystko się zgadza 
