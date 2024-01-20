@@ -1792,7 +1792,7 @@ WHERE
 
 1. AddLessonAttendance
 
-Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danej lekcji, przed wykonaniem polecenia dodawania sprawdza także czy lekcja o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danej lekcji, przed wykonaniem polecenia dodawania sprawdza także czy lekcja o podanym ID istnieje oraz czy uczeń o podanym ID istnieje oraz czy dany użytkownik jest zapisany na studiom/zjazd, w ramach którego odbywa się dana lekcja.
 
 ```sql
 CREATE PROCEDURE [dbo].[AddLessonAttendance]
@@ -1801,17 +1801,32 @@ CREATE PROCEDURE [dbo].[AddLessonAttendance]
     @IsPresent BIT
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM Lessons WHERE LessonID = @LessonID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    IF EXISTS (SELECT 1 FROM Lessons WHERE LessonID = @LessonID) 
+	AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID) 
+	AND 
+	(EXISTS (SELECT * FROM EnrolledStudentsToStudies AS e
+		INNER JOIN Semesters AS s ON s.StudiesID=e.StudiesID
+		INNER JOIN Subjects AS su ON su.SemesterID = s.SemesterID
+		INNER JOIN Lessons AS l ON l.SubjectID = su.SubjectID
+		WHERE l.LessonID = @LessonID AND e.StudentID = @StudentID) 
+	OR EXISTS (SELECT * FROM EnrolledStudentsToGatherings AS e
+		INNER JOIN Lessons AS l ON l.GatheringID = e.GatheringID
+		WHERE l.LessonID = @LessonID AND e.StudentID = @StudentID))
     BEGIN
         INSERT INTO LessonsAttendance(LessonID, StudentID, Attendance)
         VALUES (@LessonID, @StudentID, @IsPresent);
+        PRINT 'Attendance got commited.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect LessonID or StudentID.';
     END
 END;
 ```
 
 2. AddMeetingAttendance
 
-Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danym spotkaniu, przed wykonaniem polecenia dodawania sprawdza także czy spotkanie o podanym ID istnieje oraz czy uczeń o podanym ID istnieje.
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danym spotkaniu, przed wykonaniem polecenia dodawania sprawdza także czy spotkanie o podanym ID istnieje oraz czy uczeń o podanym ID istnieje czy dany użytkownik jest zapisany na kurs, w ramach którego odbywa się dane spotkanie.
 
 ```sql
 CREATE PROCEDURE [dbo].[AddMeetingAttendance]
@@ -1820,17 +1835,27 @@ CREATE PROCEDURE [dbo].[AddMeetingAttendance]
     @IsPresent BIT
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM Meetings WHERE MeetingID = @MeetingID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    IF EXISTS (SELECT 1 FROM Meetings WHERE MeetingID = @MeetingID) 
+	AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+	AND EXISTS (SELECT * FROM EnrolledStudentsToCourses AS e
+		INNER JOIN Modules AS m ON m.CourseID = e.CourseID
+		INNER JOIN Meetings AS me ON me.ModuleID = m.ModuleID
+		WHERE me.MeetingID = @MeetingID AND e.StudentID = @StudentID)
     BEGIN
         INSERT INTO CourseAttendance (MeetingID, StudentID, Attendance)
         VALUES (@MeetingID, @StudentID, @IsPresent);
+        PRINT 'Attendance got commited.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect MeetingID or StudentID.';
     END
 END;
 ```
 
 3. AddPractiseAttendance
 
-Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danych praktykach, przed wykonaniem polecenia dodawania sprawdza także czy praktyki o podanym ID istnieją oraz czy uczeń o podanym ID istnieje.
+Procedura ta pozwala na dodanie konkretnemu użytkownikowi obecności na danych praktykach, przed wykonaniem polecenia dodawania sprawdza także czy praktyki o podanym ID istnieją oraz czy uczeń o podanym ID istnieje czy dany użytkownik jest zapisany na studiom, w ramach którego odbywają się dane praktyki.
 
 ```sql
 CREATE PROCEDURE [dbo].[AddPractiseAttendance]
@@ -1839,10 +1864,20 @@ CREATE PROCEDURE [dbo].[AddPractiseAttendance]
     @IsPresent BIT
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM Practices WHERE PractiseID = @PractiseID) AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+    IF EXISTS (SELECT 1 FROM Practices WHERE PractiseID = @PractiseID) 
+	AND EXISTS (SELECT 1 FROM Students WHERE StudentID = @StudentID)
+	AND EXISTS (SELECT * FROM EnrolledStudentsToStudies AS e
+		INNER JOIN Semesters AS s ON s.StudiesID = e.StudiesID
+		INNER JOIN Practices AS p ON p.SemesterID = s.SemesterID
+		WHERE p.PractiseID = @PractiseID AND e.StudentID = @StudentID)
     BEGIN
         INSERT INTO PractiseAttendance(PractiseID, StudentID, Attendance)
         VALUES (@PractiseID, @StudentID, @IsPresent);
+        PRINT 'Attendance got commited.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect PractiseID or StudentID.';
     END
 END;
 ```
