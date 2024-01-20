@@ -1636,12 +1636,16 @@ INNER JOIN
 INNER JOIN
     dbo.Employees AS E ON M1.PersonID = E.EmployeeID
 WHERE  
-	(M1.Duration IS NOT NULL) AND (M2.Duration IS NOT NULL) AND (CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate)) AND 
-	(DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', M1.MeetingDate), M1.Duration) 
-                      > CONVERT(TIME, M2.MeetingDate)) OR
-                      (M1.Duration IS NULL) AND (M1.MeetingDate = M2.MeetingDate) OR
-                    (M2.Duration IS NULL) AND (CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate))
-        
+	(M1.ID < M2.ID
+	AND (
+		    (M1.Duration IS NOT NULL 
+            AND M2.Duration IS NOT NULL 
+            AND CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate) 
+            AND DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', M1.MeetingDate), M1.Duration) > CONVERT(TIME, M2.MeetingDate))
+		OR (
+            (M1.Duration IS NULL OR M2.Duration IS NULL )
+            AND CONVERT(DATE, M1.MeetingDate) = CONVERT(DATE, M2.MeetingDate))
+    ));
 ```
 
 <p align="center">
@@ -1681,6 +1685,108 @@ WHERE
 <p align="center">
   <img src="views/ConflictingTranslatorLessons.png" alt="ConflictingTranslatorLessons">
 </p>
+
+20. AllEnrolments 
+
+Widok "AllEnrolments" wyświetla wszystkich studentów (StudentID) wraz z wydarzeniami na które się zapisali oraz datą tego zapisania (OrderDate).
+Dodatkowo wypisujemy imie (FirstName) i nazwisko (LastName) tego studenta. 
+
+```sql
+CREATE VIEW AllEnrolments AS
+SELECT DISTINCT 
+    O.StudentID, 
+    OD.OfferID, 
+    S.FirstName, 
+    S.LastName, 
+    O.OrderDate 
+FROM 
+    Order_details OD 
+JOIN 
+    Orders O ON O.OrderID = OD.OrderID
+JOIN 
+    Students S ON S.StudentID = O.StudentID
+```
+<!-- DODAĆ ZDJ -->
+
+21. StudentsConflicts
+
+Widok "StudentsConflicts" identyfikuje konflikty w grafiku studentów, zarówno w przypadku spotkań, jak i lekcji. Dla każdej pary konfliktujących spotkań/lekcji, widok dostarcza informacje o studencie (StudentID), jego imieniu i nazwisku, typie oferty (Meeting, Lesson, Studies, Gathering), identyfikatorze oferty (ID), dacie rozpoczęcia i zakończenia obu ofert (Date1, Duration1, Date2, Duration2). Konflikty są uwzględniane w przypadku nachodzenia się czasów lub dat.
+
+```sql
+CREATE VIEW StudentsConflicts AS
+WITH MergedMeetings AS (
+	SELECT 
+		AE.StudentID StudentID, 
+		W.WebinarID OfferID, 
+		O.Type OfferType, 
+		W.[Date] OfferDate, 
+		Null Duration
+	FROM  
+		Webinar W
+	JOIN Offers O ON W.WebinarID = O.OfferID
+	JOIN AllEnrolments AE ON O.OfferID = AE.OfferID
+
+	UNION 
+
+	SELECT 
+		AE.StudentID StudentID, 
+		Me.MeetingID OfferID, 
+		O.Type OfferType , 
+		Me.[Date] OfferDate, 
+		Null Duration
+	FROM  
+		Meetings Me
+	JOIN Modules Mo ON Me.ModuleID = Mo.ModuleID
+	JOIN Courses C ON Mo.CourseID = C.CourseID
+	JOIN Offers O ON C.CourseID = O.OfferID
+	JOIN AllEnrolments AE ON O.OfferID = AE.OfferID
+
+	UNION
+
+	SELECT 
+		AE.StudentID StudentID,
+		L.LessonID OfferID,
+		O.Type OfferType, 
+		L.[Date] OfferDate, 
+		L.Duration Duration 
+	FROM  
+		Lessons L
+	JOIN Gatherings G ON L.GatheringID = G.GatheringID
+	JOIN Semesters Sem ON G.SemesterID = Sem.SemesterID
+	JOIN Studies Su ON Sem.StudiesID = Su.StudiesID
+	JOIN Offers O ON Su.StudiesID = O.OfferID
+	JOIN AllEnrolments AE ON O.OfferID = AE.OfferID)
+
+SELECT 
+	M1.StudentID, 
+	E.FirstName, 
+	E.LastName, 
+	M1.offerType AS OfferType1, 
+	M1.OfferID AS ID1, 
+	M2.offerType AS OfferType2, 
+	M2.OfferID AS ID2, 
+	M1.OfferDate AS Date1, 
+	 M1.Duration AS Duration1, 
+	M2.OfferDate AS Date2, 
+    M2.Duration AS Duration2
+FROM    
+	MergedMeetings AS M1 
+INNER JOIN
+    MergedMeetings AS M2 ON M1.StudentID = M2.StudentID AND M1.OfferID < M2.OfferID 
+INNER JOIN
+    dbo.Employees AS E ON M1.StudentID = E.EmployeeID
+WHERE  
+		M1.OfferID < M2.OfferID
+	AND (
+		    (M1.Duration IS NOT NULL 
+            AND M2.Duration IS NOT NULL 
+            AND CONVERT(DATE, M1.OfferDate) = CONVERT(DATE, M2.OfferDate) 
+            AND DATEADD(MINUTE, DATEDIFF(MINUTE, '00:00', M1.OfferDate), M1.Duration) > CONVERT(TIME, M2.OfferDate))
+		OR (
+            (M1.Duration IS NULL OR M2.Duration IS NULL )
+            AND CONVERT(DATE, M1.OfferDate) = CONVERT(DATE, M2.OfferDate))
+    );
+```
 
 **Procedury:**
 
@@ -2454,6 +2560,70 @@ BEGIN
 END;
 
 ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
+```
+
+**Indeksy**
+
+1. CourseOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [CourseOrderIndex] ON [dbo].[Courses]
+(
+	[StartDate] ASC,
+	[TopicID] ASC,
+	[CourseName] ASC,
+	[CourseID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+<!-- OSTATNIE LINIJKI BYM USUNĄŁ -->
+
+2. EmployessOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [EmployessOrderIndex] ON [dbo].[Employees]
+(
+	[HireDate] ASC,
+	[Salary] ASC,
+	[EmployeeID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+3. EnrollmentsOrderIndex 
+
+```sql
+CREATE NONCLUSTERED INDEX [EnrollmentsOrderIndex] ON [dbo].[Enrollment]
+(
+	[Enroll_date] ASC,
+	[StudentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+4. GatheringsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [GatheringsOrderIndex] ON [dbo].[Gatherings]
+(
+	[Date] ASC,
+	[SemesterID] ASC,
+	[GatheringID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+5. LessonsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [LessonsOrderIndex] ON [dbo].[Lessons]
+(
+	[Date] ASC,
+	[TopicID] ASC,
+	[TeacherID] ASC,
+	[LessonID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
 ```
 
 **Role**
