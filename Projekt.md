@@ -2023,7 +2023,7 @@ END;
 
 ```
 
-17.EnrolledStudentsToStudiesInDateRange
+17. EnrolledStudentsToStudiesInDateRange
 
 Proceudra przedstawia studentów zapisanych na poszczególne studia w zadanym przedziale czasowym. 
 
@@ -2076,6 +2076,8 @@ END;
 
 20. AddNewOffer
 
+Procedura AddNewOffer dodaje nową ofertę do tabeli Offers, pod warunkiem, że oferty o podanej nazwie (@Name) jeszcze nie istnieją w bazie danych. Procedura przyjmuje parametry takie jak nazwa oferty, typ, opis, miejsce, cena oraz zniżka dla studentów, a następnie wstawia nowy rekord do tabeli, jeśli oferta o danej nazwie jeszcze nie istnieje.
+
 ```sql
 CREATE PROCEDURE [dbo].[AddNewOffer]
     @Name NVARCHAR(50),
@@ -2088,15 +2090,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM Offers WHERE Name = @Name)
+    IF NOT EXISTS (SELECT 1 FROM Offers WHERE Name = @Name)
     BEGIN
-        THROW 50000, 'Oferta o podanej nazwie już istnieje.', 1;
-        RETURN;
+        INSERT INTO Offers (Name, Type, Description, Place, Price, DiscountToStudents)
+		VALUES (@Name, @Type, @Description, @Place, @Price, @DiscountToStudents);
     END
-
-    INSERT INTO Offers (Name, Type, Description, Place, Price, DiscountToStudents)
-    VALUES (@Name, @Type, @Description, @Place, @Price, @DiscountToStudents);
-
 END;
 ```
 
@@ -2123,10 +2121,17 @@ BEGIN
     EXEC AddNewOffer @CourseName, 'Courses', @CourseDescription, @CoursePlace, @Price, @DiscountToStudents;
 
     DECLARE @NewOfferID INT;
-    SET @NewOfferID = (SELECT SCOPE_IDENTITY());
+    SELECT @NewOfferID = dbo.GetOfferIDByName(@CourseName);
 
-    INSERT INTO Courses (CourseID, TopicID, CourseName, StartDate, ModulesNo, PaymentDay, FullPrice, Deposit, Discount)
-    VALUES (@NewOfferID, @TopicID, @CourseName, @StartDate, 0, @PaymentDay, @Price, @Deposit, @DiscountToStudents);
+    IF @NewOfferID IS NOT NULL
+    BEGIN
+        INSERT INTO Courses (CourseID, TopicID, CourseName, StartDate, ModulesNo, PaymentDay, FullPrice, Deposit, Discount)
+        VALUES (@NewOfferID, @TopicID, @CourseName, @StartDate, 0, @PaymentDay, @Price, @Deposit, @DiscountToStudents);
+    END
+    ELSE
+    BEGIN
+        PRINT 'Błąd: Nie udało się pobrać identyfikatora oferty.';
+    END
 END;
 ```
 
@@ -2198,6 +2203,109 @@ BEGIN
     INSERT INTO Meetings (ModuleID, LanguageID, Date, Type, Place, Link, TeacherID, TranslatorID)
     VALUES (@ModuleID, @LanguageID, @Date, @Type, @Place, @Link, @TeacherID, @TranslatorID);
 
+END;
+```
+
+24. AddNewWebinar
+
+Procedura AddNewWebinar służy do dodawania nowych webinariów do bazy danych. Najpierw wywołuje procedurę AddNewOffer w celu utworzenia nowej oferty dla webinariów. Następnie pobiera identyfikator oferty za pomocą funkcji dbo.GetOfferIDByName na podstawie nazwy webinariów. Jeśli identyfikator oferty zostanie pomyślnie pobrany, procedura dodaje informacje o webinariach, takie jak nazwa, data, nauczyciel, i link do spotkania online, do tabeli Webinar. W przypadku błędu podczas pobierania identyfikatora oferty, procedura wypisuje komunikat o błędzie.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewWebinar]
+    @WebinarName NVARCHAR(30),
+    @Description NVARCHAR(50),
+    @Place NVARCHAR(20),
+    @Price MONEY,
+    @DiscountToStudents DECIMAL(5, 2),
+    @Date DATE,
+	@Teacher INT,
+	@Link NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    EXEC AddNewOffer @WebinarName, 'Webinar', @Description, @Place, @Price, @DiscountToStudents;
+
+    DECLARE @NewOfferID INT;
+    SELECT @NewOfferID = dbo.GetOfferIDByName(@WebinarName);
+
+    IF @NewOfferID IS NOT NULL
+    BEGIN
+        INSERT INTO Webinar (WebinarID, WebinarName, Date, TeacherID, MeetingLink)
+        VALUES (@NewOfferID, @WebinarName, @Date, @Teacher, @Link);
+    END
+    ELSE
+    BEGIN
+        PRINT 'Błąd: Nie udało się pobrać identyfikatora oferty.';
+    END
+END;
+```
+
+25. AddNewStudies
+
+Procedura AddNewStudies została stworzona w celu dodawania nowych studiów do bazy danych. Początkowo wywołuje procedurę AddNewOffer, aby utworzyć nową ofertę dla studiów. Następnie korzysta z funkcji dbo.GetOfferIDByName, aby pobrać identyfikator oferty na podstawie nazwy studiów. Jeśli identyfikator oferty zostanie pomyślnie pobrany, procedura dodaje informacje o studiach, takie jak nazwa, opis, lokalizacja, opłata, menadżer i pojemność studentów, do tabeli Studies. W przypadku błędu podczas pobierania identyfikatora oferty, procedura wypisuje komunikat o błędzie.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewStudies]
+    @Name NVARCHAR(30),
+    @Description NVARCHAR(50),
+    @Place NVARCHAR(20),
+    @Price MONEY,
+    @DiscountToStudents DECIMAL(5, 2),
+	@Menager INT,
+	@Capacity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    EXEC AddNewOffer @Name, 'Studies', @Description, @Place, @Price, @DiscountToStudents;
+
+    DECLARE @NewOfferID INT;
+    SELECT @NewOfferID = dbo.GetOfferIDByName(@Name);
+
+    IF @NewOfferID IS NOT NULL
+    BEGIN
+        INSERT INTO Studies (StudiesID, Name, Fee, MenagerID, StudentCapacity)
+        VALUES (@NewOfferID, @Name, @Price, @Menager, @Capacity);
+    END
+    ELSE
+    BEGIN
+        PRINT 'Błąd: Nie udało się pobrać identyfikatora oferty.';
+    END
+END;
+```
+
+26. AddNewGathering
+
+Procedura AddNewGathering służy do dodawania nowych wydarzeń zgromadzeniowych do bazy danych. Najpierw inicjalizuje nową ofertę dla zgromadzeń, a następnie korzysta z funkcji dbo.GetOfferIDByName, aby uzyskać identyfikator nowo utworzonej oferty na podstawie nazwy wydarzenia zgromadzeniowego. Jeśli operacja pobierania identyfikatora zakończy się powodzeniem, procedura dodaje informacje o zgromadzeniu, takie jak nazwa, opis, lokalizacja, opłata, rabat dla studentów, data i powiązany semestr, do tabeli Gatherings. W przypadku niepowodzenia procedura wypisuje komunikat o błędzie.
+
+```sql
+CREATE PROCEDURE [dbo].[AddNewGathering]
+    @Name NVARCHAR(30),
+    @Description NVARCHAR(50),
+    @Place NVARCHAR(20),
+    @Price MONEY,
+    @DiscountToStudents DECIMAL(5, 2),
+	@Date datetime,
+	@SemesterID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    EXEC AddNewOffer @Name, 'Gathering', @Description, @Place, @Price, @DiscountToStudents;
+
+    DECLARE @NewOfferID INT;
+    SELECT @NewOfferID = dbo.GetOfferIDByName(@Name);
+
+    IF @NewOfferID IS NOT NULL
+    BEGIN
+        INSERT INTO Gatherings (GatheringID, SemesterID, Date)
+        VALUES (@NewOfferID, @SemesterID, @Date);
+    END
+    ELSE
+    BEGIN
+        PRINT 'Błąd: Nie udało się pobrać identyfikatora oferty.';
+    END
 END;
 ```
 
@@ -2295,6 +2403,25 @@ BEGIN
 END
 ```
 
+5. GetOfferIDByName
+
+Funkcja GetOfferIDByName zwraca identyfikator oferty (OfferID) na podstawie podanej nazwy oferty (@OfferName).
+
+```sql
+CREATE FUNCTION [dbo].[GetOfferIDByName](@OfferName NVARCHAR(50))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @OfferID INT;
+
+    SELECT @OfferID = OfferID
+    FROM Offers
+    WHERE Name = @OfferName;
+
+    RETURN @OfferID;
+END;
+
+```
 
 **Triggery:**
 1. CheckStudentCountOnStudies
