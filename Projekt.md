@@ -1688,25 +1688,31 @@ WHERE
 
 20. AllEnrolments 
 
-Widok "AllEnrolments" wyświetla wszystkich studentów (StudentID) wraz z wydarzeniami na które się zapisali oraz datą tego zapisania (OrderDate).
-Dodatkowo wypisujemy imie (FirstName) i nazwisko (LastName) tego studenta. 
+Widok "AllEnrolments" wyświetla wszystkich studentów (StudentID) wraz z wydarzeniami na które się zapisali oraz datą tego zapisania (OrderDate). Dodatkowo wypisujemy imie (FirstName) i nazwisko (LastName) tego studenta. 
 
 ```sql
-CREATE VIEW AllEnrolments AS
+CREATE VIEW [dbo].[AllEnrolments] AS
 SELECT DISTINCT 
     O.StudentID, 
     OD.OfferID, 
     S.FirstName, 
     S.LastName, 
-    O.OrderDate 
+    O.OrderDate, 
+	offer.Place AS EventPlace,
+	offer.Name AS EventName,
+	offer.type
 FROM 
     Order_details OD 
 JOIN 
     Orders O ON O.OrderID = OD.OrderID
 JOIN 
     Students S ON S.StudentID = O.StudentID
+JOIN 
+	Offers offer ON offer.OfferID = OD.OfferID
 ```
-<!-- DODAĆ ZDJ -->
+<p align="center">
+  <img src="views/AllEnrolments.png" alt="AllEnrolments">
+</p>
 
 21. StudentsConflicts
 
@@ -1787,6 +1793,10 @@ WHERE
             AND CONVERT(DATE, M1.OfferDate) = CONVERT(DATE, M2.OfferDate))
     );
 ```
+
+<p align="center">
+  <img src="views/StudentsConflicts.png" alt="StudentsConflicts">
+</p>
 
 **Procedury:**
 
@@ -2725,6 +2735,7 @@ ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
 ```
 
 **Indeksy**
+<!-- dodajemy indeksy dla wszystkich kluczy obcych?? -->
 
 1. CourseOrderIndex
 
@@ -2736,7 +2747,6 @@ CREATE NONCLUSTERED INDEX [CourseOrderIndex] ON [dbo].[Courses]
 	[CourseName] ASC,
 	[CourseID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
 ```
 <!-- OSTATNIE LINIJKI BYM USUNĄŁ -->
 
@@ -2749,7 +2759,6 @@ CREATE NONCLUSTERED INDEX [EmployessOrderIndex] ON [dbo].[Employees]
 	[Salary] ASC,
 	[EmployeeID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
 ```
 
 3. EnrollmentsOrderIndex 
@@ -2760,7 +2769,6 @@ CREATE NONCLUSTERED INDEX [EnrollmentsOrderIndex] ON [dbo].[Enrollment]
 	[Enroll_date] ASC,
 	[StudentID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
 ```
 
 4. GatheringsOrderIndex
@@ -2772,7 +2780,6 @@ CREATE NONCLUSTERED INDEX [GatheringsOrderIndex] ON [dbo].[Gatherings]
 	[SemesterID] ASC,
 	[GatheringID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
 ```
 
 5. LessonsOrderIndex
@@ -2785,13 +2792,62 @@ CREATE NONCLUSTERED INDEX [LessonsOrderIndex] ON [dbo].[Lessons]
 	[TeacherID] ASC,
 	[LessonID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
 ```
 
-**Role**
+**Uprawnienia** 
+<!-- nie wiem czy nie za ogólnie -->
+- __Administrator__ - całkowity dostęp do bazy,
+- __Pracownik__ - tworzenie nowych wydarzeń, zarządzanie wydarzeniami
+- __Klient__ - zapis na wydarzenia, dokonywanie płatności, wprowadzanie danych
+
+**Generator danych** 
+<!-- i cos z tym trzeba wykminic -->
+
+
+<!-- **Role**
 
 W systemie proponujemy zdefiniowanie następujących ról:
 
 - __Administrator__ - dostęp do wszystkich tabel, procedur oraz widoków
-- __Pracownik__ - 
-- __Klient__ - 
+- __Pracownik__ - posiada dostęp do następujących procedur:
+    - AddLessonAttendance,
+    - AddMeetingAttendance,
+    - AddPractiseAttendance,
+    - UpdateLessonAttendance,
+    - UpdatePractiseAttendance,
+    - UpdateMeetingAttendance,
+    - GetStudentPracticeCompletionStatus,
+    - GetStudentPracticeSummary,
+    - MeetingsByTeacher
+oraz nasepujące widoki:
+    - AttendanceMeetingView,
+    - CoursesPass,
+    - ConflictingTranslatorMeetings,
+    - EnrolledStudentsToCourses,
+    - EnrolledStudentsToGatherings,
+    - EnrolledStudentsToStudies,
+    - EnrolledStudentsToWebinars,
+    - StudentPracticesCompletionStatus,
+    - StudentPracticesSummaryByPractiseID,
+    - WebinarProfitView,
+    - StudentsEnrolmentInfo,
+    - AllTeacherConflicts,
+    - AllTranslatorsConflicts,
+    - ConflictingTranslatorLessons
+- __Klient__ -  dostęp do następujących procedur:
+    - AddNewOrder,
+    - AddOrderDetails,
+    - AddPayment
+oraz nasepujące widoki:
+    - AttendanceMeetingView,
+    - CoursesPass,
+    - EnrolledStudentsToCourses,
+    - EnrolledStudentsToGatherings,
+    - EnrolledStudentsToStudies,
+    - EnrolledStudentsToWebinars,
+    - StudentPracticesCompletionStatus,
+    - StudentPracticesSummaryByPractiseID,
+    - WebinarProfitView,
+    - StudentsEnrolmentInfo,
+    - AllEnrolments -->
+
