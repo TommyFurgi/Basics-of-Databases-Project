@@ -136,7 +136,7 @@ CREATE TABLE [dbo].[Studies](
 (
 	[StudiesID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]S
+) ON [PRIMARY]
 
 ALTER TABLE [dbo].[Studies]  WITH CHECK ADD  CONSTRAINT [FK_Studies_Employees] FOREIGN KEY([MenagerID])
 REFERENCES [dbo].[Employees] ([EmployeeID])
@@ -868,7 +868,7 @@ ALTER TABLE [dbo].[Positions] CHECK CONSTRAINT [CHK_Positions_PositionName]
 
 1. AttendanceMeetingView
 
-Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu podaje sumę obecności, łączną liczbę spotkań oraz procentową obecność. Umożliwia analizę uczestnictwa studentów w ramach konkretnych kursów i modułów.
+Widok przedstawiający obecność studentów na spotkaniach. Dla każdego kursu podaje sumę obecności(Attendance), łączną liczbę(AllMeeting) spotkań oraz procentową obecność(AttendancePercentage). Umożliwia analizę uczestnictwa studentów w ramach konkretnych kursów i modułów.
 
 ```sql
 CREATE VIEW [dbo].[AttendanceMeetingView] AS
@@ -937,7 +937,7 @@ GROUP BY amv.CourseID, amv.CourseName, amv.StudentID, s.FirstName, s.LastName, c
 
 3. ConflictingTranslatorMeetings
 
-Widok [ConflictingTranslatorMeetings] identyfikuje konfliktowe spotkania tłumaczy, prezentując informacje o dwóch spotkaniach o różnych identyfikatorach (ModuleID1 i ModuleID2), które mają tę samą datę (MeetingDate) oraz dotyczą tego samego tłumacza (PersonID). Dodatkowo, widok dostarcza imię (FirstName) i nazwisko (LastName) tłumacza za pomocą danych pobranych z tabeli pracowników (Employees).
+Widok ConflictingTranslatorMeetings identyfikuje konfliktowe spotkania tłumaczy, prezentując informacje o dwóch spotkaniach o różnych identyfikatorach (ModuleID1 i ModuleID2), które mają tę samą datę (MeetingDate) oraz dotyczą tego samego tłumacza (PersonID). Dodatkowo, widok dostarcza imię (FirstName) i nazwisko (LastName) tłumacza za pomocą danych pobranych z tabeli pracowników (Employees).
 
 ```sql
 CREATE VIEW [dbo].[ConflictingTranslatorMeetings] AS
@@ -1028,7 +1028,7 @@ WHERE
 
 6. EnrolledStudentsToGatherings
 
-Widok [EnrolledStudentsToGatherings] dostarcza informacje o studentach zapisanych na spotkania. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator spotkania (GatheringID), nazwę spotkania (Name), opis spotkania (Description), miejsce spotkania (Place), oraz datę spotkania (Date).
+Widok [EnrolledStudentsToGatherings dostarcza informacje o studentach zapisanych na spotkania. Prezentuje identyfikator studenta (StudentID), imię (FirstName) i nazwisko (LastName) studenta, identyfikator spotkania (GatheringID), nazwę spotkania (Name), opis spotkania (Description), miejsce spotkania (Place), oraz datę spotkania (Date).
 
 ```sql
 SELECT 
@@ -1132,7 +1132,7 @@ WHERE
 
 9. ListOfDebtors
 
-Widok [ListOfDebtors] przedstawia szczegółowe informacje o osobach, które wzięły udział w różnych wydarzeniach, ale jeszcze nie uregulowały swoich płatności, pozostając w stanie zadłużenia. Zidentyfikowani dłużnicy są grupowani według identyfikatora studenta (StudentID) oraz oferty (OfferID), a informacje obejmują imię i nazwisko studenta (Student_name), identyfikator oferty (OfferID), nazwę oferty (Name) oraz kwotę zadłużenia (Debt). Widok uwzględnia różne rodzaje wydarzeń, takie jak spotkania (Gatherings), kursy (Courses), webinary (Webinar) oraz studia (Studies).
+Widok ListOfDebtors przedstawia szczegółowe informacje o osobach, które wzięły udział w różnych wydarzeniach, ale jeszcze nie uregulowały swoich płatności, pozostając w stanie zadłużenia. Zidentyfikowani dłużnicy są grupowani według identyfikatora studenta (StudentID) oraz oferty (OfferID), a informacje obejmują imię i nazwisko studenta (Student_name), identyfikator oferty (OfferID), nazwę oferty (Name) oraz kwotę zadłużenia (Debt). Widok uwzględnia różne rodzaje wydarzeń, takie jak spotkania (Gatherings), kursy (Courses), webinary (Webinar) oraz studia (Studies).
 
 ```sql
 WITH t AS (
@@ -1260,7 +1260,7 @@ WHERE
 
 10. OrdersPaymentsView
 
-Widok [OrdersPaymentsView] dostarcza kompleksowych informacji na temat płatności związanych z zamówieniami. Prezentuje identyfikator zamówienia (OrderID), łączną wartość zamówienia (Value), opłaconą kwotę (Paid), kwotę do zapłaty (ToPay), datę anulowania płatności (CancelDate), datę zamówienia (OrderDate), identyfikator studenta (StudentID), oraz imię i nazwisko osoby składającej zamówienie (Orderer_name).
+WidokOrdersPaymentsView dostarcza kompleksowych informacji na temat płatności związanych z zamówieniami. Prezentuje identyfikator zamówienia (OrderID), łączną wartość zamówienia (Value), opłaconą kwotę (Paid), kwotę do zapłaty (ToPay), datę anulowania płatności (CancelDate), datę zamówienia (OrderDate), identyfikator studenta (StudentID), oraz imię i nazwisko osoby składającej zamówienie (Orderer_name).
 
 ```sql
 CREATE VIEW [dbo].[OrdersPaymentsView] AS
@@ -1903,7 +1903,7 @@ AS
 BEGIN
     INSERT INTO Orders (StudentID, OrderDate)
     VALUES (@StudentID, GETDATE());
-
+    PRINT 'Order added.';
 END;
 ```
 
@@ -1939,7 +1939,12 @@ BEGIN
         BEGIN
             INSERT INTO Order_details (OrderID, OfferID, Value, Discount)
             VALUES (@OrderID, @OfferID, @Value, @Discount);
+            PRINT 'Order details added.';
         END
+    END
+    ELSE
+    BEGIN
+        PRINT 'An error occured.';
     END
 END;
 ```
@@ -1956,13 +1961,15 @@ CREATE PROCEDURE [dbo].[AddPayment]
     @CancelDate DATETIME
 AS
 BEGIN
-    
     IF EXISTS (SELECT 1 FROM Orders WHERE OrderID = @OrderID)
     BEGIN
-   
         INSERT INTO Payments (OrderID, Date, Value, CancelDate)
         VALUES (@OrderID, @Date, @Value, @CancelDate);
-
+        PRINT 'Payment added.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'An error occured.';
     END
 END;
 ```
@@ -2076,6 +2083,12 @@ BEGIN
         UPDATE LessonsAttendance
         SET Attendance = @NewAttendance
         WHERE LessonID = @LessonID AND StudentID = @StudentID;
+
+        PRINT 'Attendance Updated.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect LessonID or StudentID';
     END
 END;
 ```
@@ -2096,6 +2109,12 @@ BEGIN
         UPDATE CourseAttendance
         SET Attendance = @NewAttendance
         WHERE MeetingID = @MeetingID AND StudentID = @StudentID;
+
+        PRINT 'Attendance Updated.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect MeetingID or StudentID';
     END
 END;
 ```
@@ -2116,6 +2135,12 @@ BEGIN
         UPDATE PractiseAttendance
         SET Attendance = @NewAttendance
         WHERE PractiseID = @PractiseID AND StudentID = @StudentID;
+
+        PRINT 'Attendance Updated.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'Incorrect PractiseID or StudentID';
     END
 END;
 ```
@@ -2218,7 +2243,6 @@ CREATE PROCEDURE [dbo].[UpdateMeetingDate]
 AS
 BEGIN
     SET NOCOUNT ON;
-
     UPDATE Meetings
     SET Date = @NewMeetingDate
     WHERE MeetingID = @MeetingID;
@@ -2734,9 +2758,85 @@ END;
 ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
 ```
 
+5. CheckStudentAlreadyEnrolled
+
+
+Triger [CheckStudentAlreadyEnrolled] dla tabeli [Order_details] wykonuje sprawdzenia, uniemożliwiając wstawianie wielu wierszy jednocześnie oraz kontrolując, czy osoba nie jest już zapisana na dane wydarzenie w tabeli [Orders]. Działa po operacji wstawiania, zgłaszając błąd i anulując transakcję w przypadku naruszenia warunków.
+
+```sql
+CREATE TRIGGER [dbo].[CheckStudentAlreadyEnrolled]
+ON [dbo].[Order_details]
+AFTER INSERT
+AS
+BEGIN
+    IF (SELECT COUNT(*) FROM inserted) > 1
+    BEGIN
+        RAISERROR('Wstawianie wielu wierszy jednocześnie nie jest obsługiwane.', 16, 1);
+        ROLLBACK;
+        RETURN;
+    END
+    
+    DECLARE @StudentID INT, @OfferID INT;
+
+    SELECT TOP 1 @OfferID = offerID
+    FROM inserted;
+
+    SELECT TOP 1 @StudentID = StudentID
+    FROM Orders o
+    WHERE o.OrderID IN (SELECT OrderID FROM inserted);
+
+    IF EXISTS (
+        SELECT 1
+        FROM Orders o
+        JOIN Order_details od ON od.OrderID = o.OrderID
+        WHERE o.StudentID = @StudentID AND o.OrderDate = @OfferID
+    )
+    BEGIN
+        RAISERROR('Osoba jest już zapisana na to wydarzenie.', 16, 1);
+        ROLLBACK;
+    END
+END;
+
+ALTER TABLE [dbo].[Order_details] ENABLE TRIGGER [CheckStudentAlreadyEnrolled]
+```
+
+6. BlockEnrollmentForPastEvents
+
+Trigger [BlockEnrollmentForPastEvents] dla tabeli [Order_details] działa po operacji wstawiania, sprawdzając daty z ofert kursów, spotkań, webinarów oraz studiów, aby uniemożliwić zapisywanie się na już odbyte wydarzenia. W przypadku stwierdzenia, że data wydarzenia jest wcześniejsza niż obecna data, generowany jest błąd, a transakcja zostaje anulowana, zabezpieczając przed zapisem na przeszłe wydarzenia.
+
+```sql
+CREATE TRIGGER [dbo].[BlockEnrollmentForPastEvents]
+ON [dbo].[Order_details]
+AFTER INSERT
+AS
+BEGIN
+    DECLARE @EventDate DATE;
+
+    SELECT TOP 1 @EventDate = 
+        CASE 
+            WHEN i.OfferID IS NOT NULL AND c.StartDate IS NOT NULL THEN c.StartDate
+            WHEN i.OfferID IS NOT NULL AND g.Date IS NOT NULL THEN g.Date
+            WHEN i.OfferID IS NOT NULL AND w.Date IS NOT NULL THEN w.Date
+            WHEN i.OfferID IS NOT NULL THEN NULL 
+        END
+    FROM inserted i
+    LEFT JOIN Courses c ON i.OfferID = c.CourseID
+    LEFT JOIN Gatherings g ON i.OfferID = g.GatheringID
+    LEFT JOIN Webinar w ON i.OfferID = w.WebinarID
+    LEFT JOIN Studies s ON i.OfferID = s.StudiesID;
+
+    IF (@EventDate IS NOT NULL AND @EventDate < GETDATE())
+    BEGIN
+        RAISERROR('Nie można zapisywać się na już odbyte wydarzenia.', 16, 1);
+        ROLLBACK;
+    END
+END;
+
+ALTER TABLE [dbo].[Order_details] ENABLE TRIGGER [BlockEnrollmentForPastEvents]
+```
+
+
 **Indeksy**
-<!-- dodajemy indeksy dla wszystkich kluczy obcych?? -->
-<!-- robiłem to trochę na wyczucie co może być przydatne w danej taeli  -->
 
 1. CourseOrderIndex
 
@@ -2749,7 +2849,6 @@ CREATE NONCLUSTERED INDEX [CourseOrderIndex] ON [dbo].[Courses]
 	[CourseID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ```
-<!-- OSTATNIE LINIJKI BYM USUNĄŁ -->
 
 2. EmployessOrderIndex
 
@@ -2997,21 +3096,20 @@ GO
 ```
 
 **Uprawnienia** 
-<!-- nie wiem czy nie za ogólnie -->
-- __Administrator__ - całkowity dostęp do bazy,
-- __Pracownik__ - tworzenie nowych wydarzeń, zarządzanie wydarzeniami
-- __Klient__ - zapis na wydarzenia, dokonywanie płatności, wprowadzanie danych
 
-**Generator danych** 
-<!-- i cos z tym trzeba wykminic -->
+- __Admin__ - całkowity dostęp do bazy,
+- __Moderator__ - zarządza bazą, moderuje tworzone wydarzenia, dostęp do procedur i widoków,
+- __Worker__ - tworzenie nowych wydarzeń, zarządzanie wydarzeniami, dostęp do procedur i widoków związanych z obsługą wydarzeń,
+- __Client__ - zapis na wydarzenia, dokonywanie płatności, wprowadzanie danych związanych z klientem, dostęp do widoków związanych z informacjami dla klientów.
 
 
 **Role**
 
 W systemie proponujemy zdefiniowanie następujących ról:
 
-- __Administrator__ - dostęp do wszystkich tabel, procedur oraz widoków
-- __Pracownik__ - 
+- __Admin__ - dostęp do wszystkich tabel, procedur oraz widoków
+- __Moderator__ dostęp do wszystkich procedur oraz widoków
+- __Worker__ - 
 _posiada dostęp do następujących procedur:_
     - AddLessonAttendance,
     - AddMeetingAttendance,
@@ -3037,7 +3135,7 @@ _oraz nasepujące widoki:_
     - AllTeacherConflicts,
     - AllTranslatorsConflicts,
     - ConflictingTranslatorLessons
-- __Klient__ 
+- __Client__ 
 _dostęp do następujących procedur:_
     - AddNewOrder,
     - AddOrderDetails,
@@ -3055,3 +3153,6 @@ _dostęp do następujących procedur:_
     - StudentsEnrolmentInfo,
     - AllEnrolments
 
+
+**Generator danych** 
+Wygenerowaliśmy podstawowe dane do testowania działabia tebel, widoków i procedur.
