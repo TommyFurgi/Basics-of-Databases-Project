@@ -2736,6 +2736,7 @@ ALTER TABLE [dbo].[Modules] ENABLE TRIGGER [UpdateCourseStartDate]
 
 **Indeksy**
 <!-- dodajemy indeksy dla wszystkich kluczy obcych?? -->
+<!-- robiłem to trochę na wyczucie co może być przydatne w danej taeli  -->
 
 1. CourseOrderIndex
 
@@ -2794,6 +2795,207 @@ CREATE NONCLUSTERED INDEX [LessonsOrderIndex] ON [dbo].[Lessons]
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ```
 
+6. LessonsAttendanceOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [LessonsAttendanceOrderIndex] ON [dbo].[LessonsAttendance]
+(
+	[LessonID] ASC,
+	[StudentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+7. MeetingsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [MeetingsOrderIndex] ON [dbo].[Meetings]
+(
+	[Date] ASC,
+	[ModuleID] ASC,
+	[TeacherID] ASC,
+	[MeetingID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+8. ModulesOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [ModulesOrderIndex] ON [dbo].[Modules]
+(
+	[CourseID] ASC,
+	[StartDate] ASC,
+	[EndDate] ASC,
+	[Title] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+9. OffersOrderIndex
+
+```sql 
+CREATE NONCLUSTERED INDEX [OffersOrderIndex] ON [dbo].[Offers]
+(
+	[Name] ASC,
+	[Price] ASC,
+	[Type] ASC,
+	[OfferID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+10. OrderDetailsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [OrderDetailsOrderIndex] ON [dbo].[Order_details]
+(
+	[OrderID] ASC,
+	[OfferID] ASC,
+	[Value] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+11. OrdersOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [OrdersOrderIndex] ON [dbo].[Orders]
+(
+	[OrderDate] ASC,
+	[StudentID] ASC,
+	[OrderID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+12. PaymentsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [PaymentsOrderIndex] ON [dbo].[Payments]
+(
+	[Date] ASC,
+	[OrderID] ASC,
+	[Value] ASC,
+	[CancelDate] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+13. PracticesOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [PracticesOrderIndex] ON [dbo].[Practices]
+(
+	[StartDate] ASC,
+	[SemesterID] ASC,
+	[MeetingsCount] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+14. PractiseAttendanceOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [PractiseAttendanceOrderIndex] ON [dbo].[PractiseAttendance]
+(
+	[PractiseID] ASC,
+	[StudentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+15. SemestersOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [SemestersOrderIndex] ON [dbo].[Semesters]
+(
+	[StudiesID] ASC,
+	[Semester_no] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+16. StudentsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [StudentsOrderIndex] ON [dbo].[Students]
+(
+	[LastName] ASC,
+	[FirstName] ASC,
+	[CountryID] ASC,
+	[BirthDate] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+17. StudiesOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [StudiesOrderIndex] ON [dbo].[Studies]
+(
+	[Name] ASC,
+	[Fee] ASC,
+	[StudentCapacity] ASC,
+	[StudiesID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+18. SubjectsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [SubjectsOrderIndex] ON [dbo].[Subjects]
+(
+	[SemesterID] ASC,
+	[SubjectName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+19. TeachingStaffOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [TeachingStaffOrderIndex] ON [dbo].[TeachingStaff]
+(
+	[LanguageID] ASC,
+	[TeacherID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+20. TopicsOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [TopicsOrderIndex] ON [dbo].[Topics]
+(
+	[TopicName] ASC,
+	[TopicID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+21. UsersOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [UsersOrderIndex] ON [dbo].[Users]
+(
+	[UserID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
+22. WebinarOrderIndex
+
+```sql
+CREATE NONCLUSTERED INDEX [WebinarOrderIndex] ON [dbo].[Webinar]
+(
+	[Date] ASC,
+	[WebinarName] ASC,
+	[TeacherID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+```
+
 **Uprawnienia** 
 <!-- nie wiem czy nie za ogólnie -->
 - __Administrator__ - całkowity dostęp do bazy,
@@ -2804,12 +3006,13 @@ CREATE NONCLUSTERED INDEX [LessonsOrderIndex] ON [dbo].[Lessons]
 <!-- i cos z tym trzeba wykminic -->
 
 
-<!-- **Role**
+**Role**
 
 W systemie proponujemy zdefiniowanie następujących ról:
 
 - __Administrator__ - dostęp do wszystkich tabel, procedur oraz widoków
-- __Pracownik__ - posiada dostęp do następujących procedur:
+- __Pracownik__ - 
+_posiada dostęp do następujących procedur:_
     - AddLessonAttendance,
     - AddMeetingAttendance,
     - AddPractiseAttendance,
@@ -2819,7 +3022,7 @@ W systemie proponujemy zdefiniowanie następujących ról:
     - GetStudentPracticeCompletionStatus,
     - GetStudentPracticeSummary,
     - MeetingsByTeacher
-oraz nasepujące widoki:
+_oraz nasepujące widoki:_
     - AttendanceMeetingView,
     - CoursesPass,
     - ConflictingTranslatorMeetings,
@@ -2834,11 +3037,12 @@ oraz nasepujące widoki:
     - AllTeacherConflicts,
     - AllTranslatorsConflicts,
     - ConflictingTranslatorLessons
-- __Klient__ -  dostęp do następujących procedur:
+- __Klient__ 
+_dostęp do następujących procedur:_
     - AddNewOrder,
     - AddOrderDetails,
     - AddPayment
-oraz nasepujące widoki:
+    _oraz nasepujące widoki:_
     - AttendanceMeetingView,
     - CoursesPass,
     - EnrolledStudentsToCourses,
@@ -2849,5 +3053,5 @@ oraz nasepujące widoki:
     - StudentPracticesSummaryByPractiseID,
     - WebinarProfitView,
     - StudentsEnrolmentInfo,
-    - AllEnrolments -->
+    - AllEnrolments
 
