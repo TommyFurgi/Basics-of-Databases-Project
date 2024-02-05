@@ -2,7 +2,7 @@
 
 **<p align="center">Raport</p>**
 
-**<p align="center">Zespół 5: Furgała Tomasz, Łukasz Kluza, Mateusz Sacha</p>**
+**<p align="center">Zespół 5: Tomasz Furgała, Łukasz Kluza, Mateusz Sacha</p>**
 
 1. Administrator
 
@@ -3155,4 +3155,4 @@ _dostęp do następujących procedur:_
 
 
 **Generator danych** 
-Wygenerowaliśmy podstawowe dane do testowania działabia tebel, widoków i procedur.
+Wygenerowaliśmy podstawowe dane do testowania działania tebel, widoków i procedur.
